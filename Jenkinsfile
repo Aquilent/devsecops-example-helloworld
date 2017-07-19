@@ -20,7 +20,9 @@ pipeline {
 		}
 		stage("Package") {
 			agent { docker "maven:3.5.0-jdk-8-alpine"}
-			steps { buildPackages() }
+			steps {
+                sh "maven clean package"
+             }
 		}
 		// stage("Publish") {
 		// 	agent { docker "garland/aws-cli-docker"}
@@ -75,10 +77,10 @@ def initialize() {
 //         "${jobName}: Build ${env.BUILD_NUMBER}"
 // }
 
-def getGitAuthor() {
-    return sh(script: "git show --name-only | awk '/^Author:/ {print \$2;}' | tr '\n' ' '",
-        returnStdout: true).trim()
-}
+// def getGitAuthor() {
+//     return sh(script: "git show --name-only | awk '/^Author:/ {print \$2;}' | tr '\n' ' '",
+//         returnStdout: true).trim()
+// }
 
 // def getSlackMention(author) {
 //     if (env.SLACK_USER_MAPPING == "") {
@@ -130,23 +132,23 @@ def showEnvironmentVariables() {
 // Build steps
 // ================================================================================================
 
-def buildPackages() {
-    def appNames = getApplications()
-    def i = 0 
-	for (i = 0; i < appNames.length; i++) {
-	    def name = appNames[i]
-    	def packageFile = getLocalFilePath(name)
-    	dir("${env.WORKSPACE}/src/${name}") {
-			sh "rm -f ${packageFile} version.txt"
-			sh "echo 'Build:' > version.txt"
-			sh "echo '   Date: '\$(date) >> version.txt"
-			sh "echo '   Number: ${env.BUILD_NUMBER}' >> version.txt"
-			zip zipFile: "${packageFile}"
-    		stash name: "${name}", include: "${packageFile}"
-			sh "rm -f version.txt"
-    	}
-	}
-}
+// def buildPackages() {
+//     def appNames = getApplications()
+//     def i = 0 
+// 	for (i = 0; i < appNames.length; i++) {
+// 	    def name = appNames[i]
+//     	def packageFile = getLocalFilePath(name)
+//     	dir("${env.WORKSPACE}/src/${name}") {
+// 			sh "rm -f ${packageFile} version.txt"
+// 			sh "echo 'Build:' > version.txt"
+// 			sh "echo '   Date: '\$(date) >> version.txt"
+// 			sh "echo '   Number: ${env.BUILD_NUMBER}' >> version.txt"
+// 			zip zipFile: "${packageFile}"
+//     		stash name: "${name}", include: "${packageFile}"
+// 			sh "rm -f version.txt"
+//     	}
+// 	}
+// }
 
 // ================================================================================================
 // Publish steps
