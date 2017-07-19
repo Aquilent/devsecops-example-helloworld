@@ -106,12 +106,13 @@ def buildAndRegisterDockerImage(imageBaseName, registryURL, registryCredentialsI
             credentialsId: registryCredentialsID,
             usernameVariable: 'USERNAME',
             passwordVariable: 'PASSWORD']]) 
-    {
-        sh "docker login -u $USERNAME -p $PASSWORD -e none ${registryURL}"
+        {
+            sh "docker login -u $USERNAME -p $PASSWORD -e none ${registryURL}"
+        }
+        sh "docker tag ${imageName} ${registryURL}/${image_name}"
+        sh "docker push ${registryURL}/${imageName}"
+        sh "docker logout ${registryURL}"
     }
-    sh "docker tag ${imageName} ${registryURL}/${image_name}"
-    sh "docker push ${registryURL}/${imageName}"
-    sh "docker logout ${registryURL}"
 }
 
 
