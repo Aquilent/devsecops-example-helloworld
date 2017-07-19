@@ -20,7 +20,7 @@ Parameters:
   ProvisioningBucketPath:
     Type: String
     Description: "Path in the bucket used to find files for provisioning the environment"
-    Default: ""
+    Default: "cloud-formation"
   InstanceAMI:
     Type: AWS::EC2::Image::Id
     Description: "RHEL-7.3_HVM-20170613-x86_64-4-Hourly2-GP2"
