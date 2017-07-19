@@ -21,7 +21,7 @@ pipeline {
 		stage("Package") {
 			agent { docker "maven:3.5.0-jdk-8-alpine"}
 			steps {
-                sh "mvn clean package"
+                sh "(cd ./webapp; mvn clean package)"
              }
 		}
 		// stage("Publish") {
