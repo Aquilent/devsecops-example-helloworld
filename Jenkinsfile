@@ -99,7 +99,7 @@ def showEnvironmentVariables() {
 def buildAndRegisterDockerImage(imageBaseName, registryURL, registryCredentialsID) {
     def imageName = "${imageBaseName}:${env.BUILD_ID}"
     
-    sh "docker build -t ${imageName}"
+    docker.build(imageName)
 	docker.withRegistry(registryURL, imageBaseName) {
         withCredentials([[
             $class: 'UsernamePasswordMultiBinding', 
