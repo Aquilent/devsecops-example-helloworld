@@ -5,9 +5,9 @@ import groovy.json.JsonSlurper
 pipeline {
 	agent none
     parameters {
-        string(name: 'IMAGE_NAME', defaultValue: 'hello-world', description: ''),
-        string(name: 'REGISTRY_URL', description: '')
-        string(name: 'REGISTRY_CREDENTIALS_ID', description: '')
+        string(name: 'IMAGE_NAME', defaultValue: 'hello-world', description: '-')
+        string(name: 'REGISTRY_URL', description: '-')
+        string(name: 'REGISTRY_CREDENTIALS_ID', description: '-')
     }
     options {
         timeout(time: 1, unit: 'DAYS')
