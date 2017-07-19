@@ -19,7 +19,7 @@ pipeline {
 			steps { initialize() }
 		}
 		stage("Package") {
-			agent { docker "garland/maven:3.5.0-jdk-8-alpine"}
+			agent { docker "maven:3.5.0-jdk-8-alpine"}
 			steps { buildPackages() }
 		}
 		// stage("Publish") {
