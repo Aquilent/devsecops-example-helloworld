@@ -91,27 +91,23 @@ def showEnvironmentVariables() {
     sh 'cat env.txt'
 }
 
-
 // ================================================================================================
 // Build steps
 // ================================================================================================
 
-def buildAndRegisterDockerImage(imageBaseName, registryURL, registryCredentialsID) {
+def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
     def imageName = "${imageBaseName}:${env.BUILD_ID}"
-    
-    docker.build(imageName)
-	docker.withRegistry(registryURL, imageBaseName) {
+	docker.withRegistry(url, credentialsID) {
         withCredentials([[
             $class: 'UsernamePasswordMultiBinding', 
-            credentialsId: registryCredentialsID,
+            credentialsId: credentialsID,
             usernameVariable: 'USERNAME',
             passwordVariable: 'PASSWORD']]) 
         {
-            sh "docker login -u $USERNAME -p $PASSWORD -e none ${registryURL}"
+            sh "docker login -u $USERNAME -p $PASSWORD ${url}"
         }
-        sh "docker tag ${imageName} ${registryURL}/${image_name}"
-        sh "docker push ${registryURL}/${imageName}"
-        sh "docker logout ${registryURL}"
+        docker.build(imageName).push()
+        sh "docker logout"
     }
 }
 
