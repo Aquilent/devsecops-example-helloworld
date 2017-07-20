@@ -179,6 +179,8 @@ Resources:
             - "awslogs"
             - "cfn-hup"
             - "docker"
+            - "scripts"
+            - "helloworld"
         awslogs:
           files:
             /tmp/awslogs-agent-setup.py:
@@ -286,13 +288,6 @@ Resources:
           commands:
             0-install:
               command: !Sub |
-                  #!/usr/bin/env bash
-                  # yum install -y yum-utils > /dev/null
-                  # yum-config-manager --enable rhui-REGION-rhel-server-extras
-                  # yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-                  # yum makecache fast
-                  # yum install -y --setopt=obsoletes=0 docker-ce docker-ce-selinux
-                  # yum update -y
                   yum install --setopt=obsoletes=0 docker-ce-17.03.2.ce-1.el7.centos.x86_64 \
                     docker-ce-selinux-17.03.2.ce-1.el7.centos.noarch
                   yum install -y yum-utils device-mapper-persistent-data lvm2
@@ -303,7 +298,23 @@ Resources:
                   yum -y install docker-ce                  
                   chkconfig docker on
                   service docker start
+        scripts:
           commands:
+            0-create-directory:
+              command: !Sub |
+                mkdir -p /opt/dso
+                chown root:root /opt/dso
+                chmod 755 /opt/dso
+        helloworld:
+          files:
+            /opt/dso/deploy-app:
+              source: !Sub https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/deploy-app.sh
+              group: "root"
+              owner: "root"
+              mode: "000700"
+          commands:
+            # Dummy app to verify the deployment
+            # Subsequently use /opt/dso/deploy-app <tag> <server> <credentials> to deploy
             0-install-exampleimage:
               command: !Sub |
                 docker run -d -p 80:80 --name webserver kitematic/hello-world-nginx

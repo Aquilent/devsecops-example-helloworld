@@ -5,9 +5,6 @@ import groovy.json.JsonSlurper
 pipeline {
 	agent none
     parameters {
-        string(name: 'IMAGE_NAME',
-            defaultValue: 'hello-world',
-            description: 'The (base) name of the image')
         string(name: 'REGISTRY_URL',
             defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com/hello-world',
             description: 'URL of the docker registry used to manage hello-world images')
@@ -28,33 +25,26 @@ pipeline {
 			agent { docker "maven:3.5.0-jdk-8-alpine"}
 			steps {
                 sh "(cd ./webapp; mvn clean install)"
-                sh "ls ./webapp/target"
                 archiveArtifacts 'webapp/target/spring-boot-web-jsp-1.0.war'
              }
 		}
         stage("Build and Register Image") {
             agent any
             steps {
-                buildAndRegisterDockerImage(params.IMAGE_NAME, params.REGISTRY_URL,
-                    params.REGISTRY_CREDENTIALS_ID) 
+                buildAndRegisterDockerImage(params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
             }
         }
-        stage("Deploy Image") {
+        stage("Deploy Image to Dev") {
             agent any
             steps {
-                deployImage(params.IMAGE_NAME, 'dev') 
+                deployImage('dev', params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
             }
         }
-		// stage("Proceed to test?") {
-		// 	agent none
-		// 	when { branch 'master' }
-		// 	steps { proceedTo('test') }
-		// }
-		// stage("Deploy to test") {
-		// 	agent { docker "garland/aws-cli-docker"}
-        //     when { expression { (env.BRANCH_NAME == 'master') && (env.PROCEED_TO_TEST == 'yes' ) } }
-		// 	steps { deployPackages('test') }
-		// }
+		stage("Proceed to test?") {
+			agent none
+			when { branch 'master' }
+			steps { proceedTo('test') }
+		}
 	}
 }
 
@@ -64,12 +54,11 @@ pipeline {
 // ================================================================================================
 
 def initialize() {
+    env.SYSTEM_NAME = "DSO"
+    env.IMAGE_NAME = "hello-world:${env.BUILD_ID}"
+    env.AWS_REGION = "us-east-1"
     setEnvironment()
-	env.APP_NAMES = "HelloWorld"
-	env.TARGET_DIR = "${env.WORKSPACE}/target"
-	echo "TARGET_DIR=${env.TARGET_DIR}"
     showEnvironmentVariables()
-	sh "mkdir -p ${env.TARGET_DIR}"
 }
 
 def setEnvironment() {
@@ -108,9 +97,10 @@ def showEnvironmentVariables() {
 // Build steps
 // ================================================================================================
 
-def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
-    env.IMAGE_NAME = "${imageBaseName}:${env.BUILD_ID}"
+def buildAndRegisterDockerImage(url, credentialsID) {
+    def buildResult
 	docker.withRegistry(url, credentialsID) {
+        echo "Connect to registry at ${url}"
         withCredentials([[
             $class: 'UsernamePasswordMultiBinding', 
             credentialsId: credentialsID,
@@ -119,8 +109,12 @@ def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
         {
             sh "docker login -u $USERNAME -p $PASSWORD ${url}"
         }
-        docker.build(env.IMAGE_NAME).push()
-        sh "docker logout"
+        echo "Build ${env.IMAGE_NAME}"
+        buildResult = docker.build(env.IMAGE_NAME)
+        echo "Register ${env.IMAGE_NAME} at ${url}"
+        buildResult.push()
+        echo "Disconnect from registry at ${url}"
+        sh "docker logout ${url}"
     }
 }
 
@@ -129,20 +123,46 @@ def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
 // ================================================================================================
 
 
-def deployImage(baseName, environment) {
-    sh "docker "
+def deployImage(environment, url, crdentialsId) {
+    def context = getContext(environment)
+    def ip = findIp(environment)
+    echo "Deploy ${env.IMAGE_NAME} to 'dev' environment"
+    withCredentials([[
+        $class: 'UsernamePasswordMultiBinding', 
+        credentialsId: credentialsID,
+        usernameVariable: 'USERNAME',
+        passwordVariable: 'PASSWORD']]) 
+    {
+        sshagent (credentials: ["${env.SYSTEM_NAME}-${context}-helloworld"]) {
+            sh """
+                ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
+                    sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \
+                        \"${url}\" \"${USERNAME}:${PASSWORD}\"
+"""
+        }
+    }
+}
+
+def getContext(environment) {
+    return isMaster() ? environment : 'dev'
+}
+
+def findIp(environment) {
+    def ip = sh(returnStdout: true,
+        script: """/usr/local/bin/aws ec2 describe-instances \
+            --filters "Name=instance-state-name,Values=running" \
+            "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \
+            --query "Reservations[].Instances[].{Ip:PublicIpAddress}" \
+            --output text --region ${env.AWS_REGION} | tr -d '\n'
+"""
+    )
+    echo "ip=[${ip}]"
+    return ip
 }
 
 // ================================================================================================
 // Utility steps
 // ================================================================================================
-
-def aws_cli(command, region = null) {
-	if (!region) {
-		region = env.AWS_REGION
-	}
-	sh "aws ${command} --region ${region}"
-}
 
 def proceedTo(environment) {
     def description = "Choose 'yes' if you want to deploy to this build to " + 
@@ -153,4 +173,3 @@ def proceedTo(environment) {
                 description: description)]
     }
 }
-
