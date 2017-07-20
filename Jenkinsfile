@@ -10,7 +10,7 @@ pipeline {
             defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com/hello-world',
             description: '-')
         string(name: 'REGISTRY_CREDENTIALS_ID',
-            defautValue: 'AWS-ECR-hello-world',
+            defaultValue: 'AWS-ECR-helloworld',
             description: '-')
     }
     options {
