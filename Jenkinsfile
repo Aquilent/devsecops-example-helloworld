@@ -5,13 +5,15 @@ import groovy.json.JsonSlurper
 pipeline {
 	agent none
     parameters {
-        string(name: 'IMAGE_NAME', defaultValue: 'hello-world', description: '-')
+        string(name: 'IMAGE_NAME',
+            defaultValue: 'hello-world',
+            description: 'The (base) name of the image')
         string(name: 'REGISTRY_URL',
             defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com/hello-world',
-            description: '-')
+            description: 'URL of the docker registry used to manage hello-world images')
         string(name: 'REGISTRY_CREDENTIALS_ID',
             defaultValue: 'AWS-ECR-helloworld',
-            description: '-')
+            description: 'Credentials need to connect to the docker registry')
     }
     options {
         timeout(time: 1, unit: 'DAYS')
@@ -22,11 +24,12 @@ pipeline {
 			agent any
 			steps { initialize() }
 		}
-		stage("Package") {
+		stage("Build App") {
 			agent { docker "maven:3.5.0-jdk-8-alpine"}
 			steps {
                 sh "(cd ./webapp; mvn clean install)"
                 sh "ls ./webapp/target"
+                archiveArtifacts 'webapp/target/spring-boot-web-jsp-1.0.war'
              }
 		}
         stage("Build and Register Image") {
@@ -34,6 +37,12 @@ pipeline {
             steps {
                 buildAndRegisterDockerImage(params.IMAGE_NAME, params.REGISTRY_URL,
                     params.REGISTRY_CREDENTIALS_ID) 
+            }
+        }
+        stage("Deploy Image") {
+            agent any
+            steps {
+                deployImage(params.IMAGE_NAME, 'dev') 
             }
         }
 		// stage("Proceed to test?") {
@@ -115,6 +124,14 @@ def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
     }
 }
 
+// ================================================================================================
+// Deploy steps
+// ================================================================================================
+
+
+def deployImage(baseName, environment) {
+    sh "docker "
+}
 
 // ================================================================================================
 // Utility steps
