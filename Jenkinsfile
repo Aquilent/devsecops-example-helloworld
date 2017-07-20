@@ -6,8 +6,12 @@ pipeline {
 	agent none
     parameters {
         string(name: 'IMAGE_NAME', defaultValue: 'hello-world', description: '-')
-        string(name: 'REGISTRY_URL', description: '-')
-        string(name: 'REGISTRY_CREDENTIALS_ID', description: '-')
+        string(name: 'REGISTRY_URL',
+            defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com/hello-world',
+            description: '-')
+        string(name: 'REGISTRY_CREDENTIALS_ID',
+            defautValue: 'AWS-ECR-hello-world',
+            description: '-')
     }
     options {
         timeout(time: 1, unit: 'DAYS')
@@ -96,7 +100,7 @@ def showEnvironmentVariables() {
 // ================================================================================================
 
 def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
-    def imageName = "${imageBaseName}:${env.BUILD_ID}"
+    env.IMAGE_NAME = "${imageBaseName}:${env.BUILD_ID}"
 	docker.withRegistry(url, credentialsID) {
         withCredentials([[
             $class: 'UsernamePasswordMultiBinding', 
@@ -106,7 +110,7 @@ def buildAndRegisterDockerImage(imageBaseName, url, credentialsID) {
         {
             sh "docker login -u $USERNAME -p $PASSWORD ${url}"
         }
-        docker.build(imageName).push()
+        docker.build(env.IMAGE_NAME).push()
         sh "docker logout"
     }
 }
