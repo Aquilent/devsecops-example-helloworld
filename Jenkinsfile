@@ -42,7 +42,9 @@ pipeline {
         }
 		stage("Proceed to test?") {
 			agent none
-			when { branch 'master' }
+            // Do not deploy non-master branches to test
+            // These branches must be merged via a PR to the master branch first
+			when { branch 'master' } 
 			steps { proceedTo('test') }
 		}
 	}
@@ -144,7 +146,7 @@ def deployImage(environment, url, crdentialsId) {
 }
 
 def getContext(environment) {
-    return isMaster() ? environment : 'dev'
+    return (env.BRANCH_NAME == 'master') ? environment : 'dev'
 }
 
 def findIp(environment) {
