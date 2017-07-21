@@ -8,6 +8,6 @@ stack:
         Environment: {{env:ENVIRONMENT}}
         SecurityContext: {{env:SECURITY_CONTEXT}}
         ProvisioningBucket: {{env:BUCKET_NAME}}
-        ProvisioningBucketPath: {{env::STACK_PATH}}
+        ProvisioningBucketPath: {{env:STACK_PATH}}
     initializers:
         - deploy-app.sh

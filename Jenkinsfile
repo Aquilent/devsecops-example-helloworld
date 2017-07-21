@@ -47,6 +47,12 @@ pipeline {
 			when { branch 'master' } 
 			steps { proceedTo('test') }
 		}
+        stage("Deploy Image to Test") {
+            agent any
+            steps {
+                deployImage('test', params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
+            }
+        }
 	}
 }
 
