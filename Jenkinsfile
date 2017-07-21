@@ -112,22 +112,29 @@ def showEnvironmentVariables() {
 
 def buildAndRegisterDockerImage(url, credentialsID) {
     def buildResult
+    echo "Connect to registry at ${url}"
+    dockerRegistryLogin()
 	docker.withRegistry(url, credentialsID) {
-        echo "Connect to registry at ${url}"
-        withCredentials([[
-            $class: 'UsernamePasswordMultiBinding', 
-            credentialsId: credentialsID,
-            usernameVariable: 'USERNAME',
-            passwordVariable: 'PASSWORD']]) 
-        {
-            sh "docker login -u $USERNAME -p $PASSWORD ${url}"
-        }
         echo "Build ${env.IMAGE_NAME}"
         buildResult = docker.build(env.IMAGE_NAME)
         echo "Register ${env.IMAGE_NAME} at ${url}"
         buildResult.push()
         echo "Disconnect from registry at ${url}"
         sh "docker logout ${url}"
+    }
+}
+
+def dockerRegistryLogin(environment) {
+    // withCredentials([[
+    //     $class: 'UsernamePasswordMultiBinding', 
+    //     credentialsId: credentialsID,
+    //     usernameVariable: 'USERNAME',
+    //     passwordVariable: 'PASSWORD']]) 
+    // {
+    //     sh "docker login -u $USERNAME -p $PASSWORD ${url}"
+    // }
+    withDockerContainer("garland/aws-cli-docker") {
+        sh sh(returnStdout: true, script: "aws ecr get-login | sed -e 's|-e none||g'")
     }
 }
 
@@ -175,6 +182,7 @@ def findIp(environment) {
     echo "ip=[${ip}]"
     return ip
 }
+
 
 // ================================================================================================
 // Utility steps
