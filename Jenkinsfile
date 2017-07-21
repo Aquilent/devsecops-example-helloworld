@@ -141,9 +141,8 @@ def deployImage(environment, url) {
     def ip = findIp(environment)
     echo "Deploy ${env.IMAGE_NAME} to '${environment}' environment (in context: ${context})"
     sshagent (credentials: ["${env.SYSTEM_NAME}-${context}-helloworld"]) {
-        sh """
-            ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
-                sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \"${url}\""
+        sh """ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
+            sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \"${url}\"
 """
     }
     env.ECR_TOKEN = ""
