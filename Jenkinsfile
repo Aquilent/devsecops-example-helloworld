@@ -26,6 +26,12 @@ pipeline {
 			steps {
                 sh "(cd ./webapp; mvn clean install)"
                 archiveArtifacts 'webapp/target/spring-boot-web-jsp-1.0.war'
+        		step([$class: 'JUnitResultArchiver',
+                    testResults: '**/target/surefire-reports/TEST-*.xml']
+                )
+		        dir("target") {
+			        stash includes: "*.jar", excludes: "original*", name: "jar artifacts"
+		        }
              }
 		}
         stage("Build and Register Image") {
