@@ -154,7 +154,7 @@ def findIp(environment) {
     def ip = ""
     withDockerContainer("garland/aws-cli-docker") {
         sh(returnStdout: true,
-            script: """/usr/local/bin/aws ec2 describe-instances \
+            script: """aws ec2 describe-instances \
                 --filters "Name=instance-state-name,Values=running" \
                 "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \
                 --query "Reservations[].Instances[].{Ip:PrivateIpAddress}" \
