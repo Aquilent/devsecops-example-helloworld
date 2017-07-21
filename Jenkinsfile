@@ -4,11 +4,6 @@ import groovy.json.JsonSlurper
 
 pipeline {
 	agent none
-    parameters {
-        string(name: 'REGISTRY_URL',
-            defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com',
-            description: 'URL of the docker registry used to manage hello-world images')
-    }
     options {
         timeout(time: 1, unit: 'DAYS')
         disableConcurrentBuilds()
@@ -31,13 +26,13 @@ pipeline {
         stage("Build and Register Image") {
             agent any
             steps {
-                buildAndRegisterDockerImage(params.REGISTRY_URL) 
+                buildAndRegisterDockerImage() 
             }
         }
         stage("Deploy Image to Dev") {
             agent any
             steps {
-                deployImage(env.ENVIRONMENT, params.REGISTRY_URL) 
+                deployImage(env.ENVIRONMENT) 
             }
         }
 		stage("Proceed to test?") {
@@ -51,7 +46,7 @@ pipeline {
             agent any
 			when { branch 'master' } 
             steps {
-                deployImage('test', params.REGISTRY_URL) 
+                deployImage('test') 
             }
         }
 	}
@@ -66,6 +61,7 @@ def initialize() {
     env.SYSTEM_NAME = "DSO"
     env.IMAGE_NAME = "hello-world:${env.BUILD_ID}"
     env.AWS_REGION = "us-east-1"
+    env.REGISTRY_URL = "https://912661153448.dkr.ecr.us-east-1.amazonaws.com"
     env.MAX_ENVIRONMENTNAME_LENGTH = 32
     setEnvironment()
     showEnvironmentVariables()
@@ -107,7 +103,8 @@ def showEnvironmentVariables() {
 // Build steps
 // ================================================================================================
 
-def buildAndRegisterDockerImage(url) {
+def buildAndRegisterDockerImage() {
+    def url = env.REGISTRY_URL
     def buildResult
     docker.withRegistry(url) {
         echo "Connect to registry at ${url}"
@@ -121,7 +118,8 @@ def buildAndRegisterDockerImage(url) {
     }
 }
 
-def dockerRegistryLogin(url) {
+def dockerRegistryLogin() {
+    def url = env.REGISTRY_URL
     def login_command = ""
     withDockerContainer("garland/aws-cli-docker") {
         login_command = sh(returnStdout: true,
