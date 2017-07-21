@@ -104,22 +104,20 @@ def showEnvironmentVariables() {
 // ================================================================================================
 
 def buildAndRegisterDockerImage() {
-    def url = env.REGISTRY_URL
     def buildResult
-    docker.withRegistry(url) {
-        echo "Connect to registry at ${url}"
-	    dockerRegistryLogin(url)
+    docker.withRegistry(env.REGISTRY_URL) {
+        echo "Connect to registry at ${env.REGISTRY_URL}"
+	    dockerRegistryLogin()
         echo "Build ${env.IMAGE_NAME}"
         buildResult = docker.build(env.IMAGE_NAME)
-        echo "Register ${env.IMAGE_NAME} at ${url}"
+        echo "Register ${env.IMAGE_NAME} at ${env.REGISTRY_URL}"
         buildResult.push()
-        echo "Disconnect from registry at ${url}"
-        sh "docker logout ${url}"
+        echo "Disconnect from registry at ${env.REGISTRY_URL}"
+        sh "docker logout ${env.REGISTRY_URL}"
     }
 }
 
 def dockerRegistryLogin() {
-    def url = env.REGISTRY_URL
     def login_command = ""
     withDockerContainer("garland/aws-cli-docker") {
         login_command = sh(returnStdout: true,
@@ -134,16 +132,15 @@ def dockerRegistryLogin() {
 // ================================================================================================
 
 
-def deployImage(environment, url) {
+def deployImage(environment) {
     def context = getContext(environment)
     def ip = findIp(environment)
     echo "Deploy ${env.IMAGE_NAME} to '${environment}' environment (in context: ${context})"
     sshagent (credentials: ["${env.SYSTEM_NAME}-${context}-helloworld"]) {
         sh """ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
-            sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \"${url}\"
+            sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \"${env.REGISTRY_URL}\"
 """
     }
-    env.ECR_TOKEN = ""
 }
 
 def getContext(environment) {
