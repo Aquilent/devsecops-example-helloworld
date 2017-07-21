@@ -138,7 +138,7 @@ def dockerRegistryLogin(url) {
 // ================================================================================================
 
 
-def deployImage(environment, url, credentialsID) {
+def deployImage(environment, url) {
     def context = getContext(environment)
     def ip = findIp(environment)
     echo "Deploy ${env.IMAGE_NAME} to '${environment}' environment (in context: ${context})"
