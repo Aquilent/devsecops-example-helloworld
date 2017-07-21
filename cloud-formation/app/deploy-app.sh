@@ -11,7 +11,7 @@ IMAGE_NAME="${REGISTRY_URI}/${IMAGE}"
 SUCCESS=
 
 docker login -u "${REGISTRY_USERNAME}" -p "${REGISTRY_PASSWORD}" "${REGISTRY_URL}"
-if docker pull "${REGISTRY_URL}/${IMAGE}" ; then
+if docker pull "${IMAGE_NAME}" ; then
     CONTAINER=$(docker ps -all | tail -n +2 | grep 'webserver$')
     if [ "${CONTAINER}" != "" ] ; then
         docker stop webserver

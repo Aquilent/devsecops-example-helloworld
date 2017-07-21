@@ -153,7 +153,7 @@ def getContext(environment) {
 def findIp(environment) {
     def ip = ""
     withDockerContainer("garland/aws-cli-docker") {
-        sh(returnStdout: true,
+       ip = sh(returnStdout: true,
             script: """aws ec2 describe-instances \
                 --filters "Name=instance-state-name,Values=running" \
                 "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \

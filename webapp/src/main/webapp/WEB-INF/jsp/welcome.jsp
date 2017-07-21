@@ -21,7 +21,7 @@
 	<nav class="navbar navbar-inverse">
 		<div class="container">
 			<div class="navbar-header">
-				<a class="navbar-brand" href="#">Hello World (Java Spring Boot)</a>
+				<a class="navbar-brand" href="#">DevSecOps Example</a>
 			</div>
 			<!--
 			<div id="navbar" class="collapse navbar-collapse">
@@ -36,7 +36,7 @@
 
 	<div class="container">
 		<div class="starter-template">
-			<h1${message}</h1>
+			<h1>${message}</h1>
 		</div>
 	</div>
 
