@@ -122,15 +122,13 @@ def buildAndRegisterDockerImage(url) {
 }
 
 def dockerRegistryLogin(url) {
+    def login_command = ""
     withDockerContainer("garland/aws-cli-docker") {
-        env.ECR_TOKEN = sh(returnStdout: true,
-            script: """aws ecr get-authorization-token --region ${env.AWS_REGION} --output text \
-                --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2 |\
-                tr -d '\n'
-"""
+        login_command = sh(returnStdout: true,
+            script: "aws ecr get-login --region ${AWS_REGION} | sed -e 's|-e none||g'"
         )
     }
-    sh "docker login -u AWS -p ${env.ECR_TOKEN} ${url}"
+    sh "${login_command}"
 }
 
 // ================================================================================================
@@ -145,8 +143,7 @@ def deployImage(environment, url) {
     sshagent (credentials: ["${env.SYSTEM_NAME}-${context}-helloworld"]) {
         sh """
             ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
-                sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \
-                    \"${url}\" \"AWS:${env.ECR_TOKEN}\"
+                sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \"${url}\""
 """
     }
     env.ECR_TOKEN = ""
