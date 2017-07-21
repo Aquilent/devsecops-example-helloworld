@@ -6,7 +6,7 @@ pipeline {
 	agent none
     parameters {
         string(name: 'REGISTRY_URL',
-            defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com/hello-world',
+            defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com',
             description: 'URL of the docker registry used to manage hello-world images')
         string(name: 'REGISTRY_CREDENTIALS_ID',
             defaultValue: 'AWS-ECR-helloworld',
@@ -37,7 +37,7 @@ pipeline {
         stage("Deploy Image to Dev") {
             agent any
             steps {
-                deployImage('dev', params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
+                deployImage(env.ENVIRONMENT, params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
             }
         }
 		stage("Proceed to test?") {
@@ -59,6 +59,7 @@ def initialize() {
     env.SYSTEM_NAME = "DSO"
     env.IMAGE_NAME = "hello-world:${env.BUILD_ID}"
     env.AWS_REGION = "us-east-1"
+    env.MAX_ENVIRONMENTNAME_LENGTH = 32
     setEnvironment()
     showEnvironmentVariables()
 }
@@ -125,7 +126,7 @@ def buildAndRegisterDockerImage(url, credentialsID) {
 // ================================================================================================
 
 
-def deployImage(environment, url, crdentialsId) {
+def deployImage(environment, url, credentialsID) {
     def context = getContext(environment)
     def ip = findIp(environment)
     echo "Deploy ${env.IMAGE_NAME} to 'dev' environment"
@@ -150,14 +151,17 @@ def getContext(environment) {
 }
 
 def findIp(environment) {
-    def ip = sh(returnStdout: true,
-        script: """/usr/local/bin/aws ec2 describe-instances \
-            --filters "Name=instance-state-name,Values=running" \
-            "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \
-            --query "Reservations[].Instances[].{Ip:PublicIpAddress}" \
-            --output text --region ${env.AWS_REGION} | tr -d '\n'
+    def ip = ""
+    withDockerContainer("garland/aws-cli-docker") {
+        sh(returnStdout: true,
+            script: """/usr/local/bin/aws ec2 describe-instances \
+                --filters "Name=instance-state-name,Values=running" \
+                "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \
+                --query "Reservations[].Instances[].{Ip:PrivateIpAddress}" \
+                --output text --region ${env.AWS_REGION} | tr -d '\n'
 """
-    )
+        )
+    }
     echo "ip=[${ip}]"
     return ip
 }
