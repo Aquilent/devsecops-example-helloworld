@@ -29,9 +29,6 @@ pipeline {
         		step([$class: 'JUnitResultArchiver',
                     testResults: '**/target/surefire-reports/TEST-*.xml']
                 )
-		        dir("target") {
-			        stash includes: "*.jar", excludes: "original*", name: "jar artifacts"
-		        }
              }
 		}
         stage("Build and Register Image") {
