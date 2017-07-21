@@ -49,6 +49,7 @@ pipeline {
 		}
         stage("Deploy Image to Test") {
             agent any
+			when { branch 'master' } 
             steps {
                 deployImage('test', params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
             }
@@ -135,7 +136,7 @@ def buildAndRegisterDockerImage(url, credentialsID) {
 def deployImage(environment, url, credentialsID) {
     def context = getContext(environment)
     def ip = findIp(environment)
-    echo "Deploy ${env.IMAGE_NAME} to 'dev' environment"
+    echo "Deploy ${env.IMAGE_NAME} to '${environment}' environment (in context: ${context})"
     withCredentials([[
         $class: 'UsernamePasswordMultiBinding', 
         credentialsId: credentialsID,
