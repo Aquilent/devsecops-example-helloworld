@@ -8,9 +8,6 @@ pipeline {
         string(name: 'REGISTRY_URL',
             defaultValue: 'https://912661153448.dkr.ecr.us-east-1.amazonaws.com',
             description: 'URL of the docker registry used to manage hello-world images')
-        string(name: 'REGISTRY_CREDENTIALS_ID',
-            defaultValue: 'AWS-ECR-helloworld',
-            description: 'Credentials need to connect to the docker registry')
     }
     options {
         timeout(time: 1, unit: 'DAYS')
@@ -34,13 +31,13 @@ pipeline {
         stage("Build and Register Image") {
             agent any
             steps {
-                buildAndRegisterDockerImage(params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
+                buildAndRegisterDockerImage(params.REGISTRY_URL) 
             }
         }
         stage("Deploy Image to Dev") {
             agent any
             steps {
-                deployImage(env.ENVIRONMENT, params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
+                deployImage(env.ENVIRONMENT, params.REGISTRY_URL) 
             }
         }
 		stage("Proceed to test?") {
@@ -54,7 +51,7 @@ pipeline {
             agent any
 			when { branch 'master' } 
             steps {
-                deployImage('test', params.REGISTRY_URL, params.REGISTRY_CREDENTIALS_ID) 
+                deployImage('test', params.REGISTRY_URL) 
             }
         }
 	}
@@ -110,11 +107,11 @@ def showEnvironmentVariables() {
 // Build steps
 // ================================================================================================
 
-def buildAndRegisterDockerImage(url, credentialsID) {
+def buildAndRegisterDockerImage(url) {
     def buildResult
-    echo "Connect to registry at ${url}"
-    dockerRegistryLogin()
-	docker.withRegistry(url, credentialsID) {
+    docker.withRegistry(url) {
+        echo "Connect to registry at ${url}"
+	    dockerRegistryLogin(url)
         echo "Build ${env.IMAGE_NAME}"
         buildResult = docker.build(env.IMAGE_NAME)
         echo "Register ${env.IMAGE_NAME} at ${url}"
@@ -124,18 +121,16 @@ def buildAndRegisterDockerImage(url, credentialsID) {
     }
 }
 
-def dockerRegistryLogin(environment) {
-    // withCredentials([[
-    //     $class: 'UsernamePasswordMultiBinding', 
-    //     credentialsId: credentialsID,
-    //     usernameVariable: 'USERNAME',
-    //     passwordVariable: 'PASSWORD']]) 
-    // {
-    //     sh "docker login -u $USERNAME -p $PASSWORD ${url}"
-    // }
+def dockerRegistryLogin(url) {
     withDockerContainer("garland/aws-cli-docker") {
-        sh sh(returnStdout: true, script: "aws ecr get-login | sed -e 's|-e none||g'")
+        env.ECR_TOKEN = sh(returnStdout: true,
+            script: """aws ecr get-authorization-token --region ${env.AWS_REGION} --output text \
+                --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2 |\
+                tr -d '\n'
+"""
+        )
     }
+    sh "docker login -u AWS -p ${env.ECR_TOKEN} ${url}"
 }
 
 // ================================================================================================
@@ -147,20 +142,14 @@ def deployImage(environment, url, credentialsID) {
     def context = getContext(environment)
     def ip = findIp(environment)
     echo "Deploy ${env.IMAGE_NAME} to '${environment}' environment (in context: ${context})"
-    withCredentials([[
-        $class: 'UsernamePasswordMultiBinding', 
-        credentialsId: credentialsID,
-        usernameVariable: 'USERNAME',
-        passwordVariable: 'PASSWORD']]) 
-    {
-        sshagent (credentials: ["${env.SYSTEM_NAME}-${context}-helloworld"]) {
-            sh """
-                ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
-                    sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \
-                        \"${url}\" \"${USERNAME}:${PASSWORD}\"
+    sshagent (credentials: ["${env.SYSTEM_NAME}-${context}-helloworld"]) {
+        sh """
+            ssh -o StrictHostKeyChecking=no -tt \"ec2-user@${ip}\" \
+                sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \
+                    \"${url}\" \"AWS:${env.ECR_TOKEN}\"
 """
-        }
     }
+    env.ECR_TOKEN = ""
 }
 
 def getContext(environment) {
