@@ -3,26 +3,26 @@
 import groovy.json.JsonSlurper
 
 pipeline {
-	agent none
+    agent none
     options {
         timeout(time: 1, unit: 'DAYS')
         disableConcurrentBuilds()
     }
-	stages {
-		stage("Init") {
-			agent any
-			steps { initialize() }
-		}
-		stage("Build App") {
-			agent { docker "maven:3.5.0-jdk-8-alpine"}
-			steps {
+    stages {
+        stage("Init") {
+            agent any
+            steps { initialize() }
+        }
+        stage("Build App") {
+            agent { docker "maven:3.5.0-jdk-8-alpine"}
+            steps {
                 sh "(cd ./webapp; mvn clean install)"
                 archiveArtifacts 'webapp/target/spring-boot-web-jsp-1.0.war'
-        		step([$class: 'JUnitResultArchiver',
+                step([$class: 'JUnitResultArchiver',
                     testResults: '**/target/surefire-reports/TEST-*.xml']
                 )
              }
-		}
+        }
         stage("Build and Register Image") {
             agent any
             steps {
@@ -35,21 +35,30 @@ pipeline {
                 deployImage(env.ENVIRONMENT) 
             }
         }
-		stage("Proceed to test?") {
-			agent none
+        stage("Browser Test Dev") {
+            agent any
+            steps {
+                runBrowserTest(env.ENVIRONMENT) 
+                step([$class: 'JUnitResultArchiver',
+                    testResults: "**/webapp/src/test/python/TEST-*.xml"])
+                sh "ls -lhr ./webapp/target/browser-test-results"
+            }
+        }
+        stage("Proceed to test?") {
+            agent none
             // Do not deploy non-master branches to test
             // These branches must be merged via a PR to the master branch first
-			when { branch 'master' } 
-			steps { proceedTo('test') }
-		}
+            when { branch 'master' } 
+            steps { proceedTo('test') }
+        }
         stage("Deploy Image to Test") {
             agent any
-			when { branch 'master' } 
+            when { branch 'master' } 
             steps {
                 deployImage('test') 
             }
         }
-	}
+    }
 }
 
 
@@ -75,7 +84,7 @@ def setEnvironment() {
         showEnvironmentVariables()
         throw "BRANCH_NAME is not an environment variable or is empty"
     } else if (branchName != "master") {
-		//echo "split"
+        //echo "split"
         if (branchName.contains("/")) {
             // ignore branch type
             branchName = branchName.split("/")[1]
@@ -107,7 +116,7 @@ def buildAndRegisterDockerImage() {
     def buildResult
     docker.withRegistry(env.REGISTRY_URL) {
         echo "Connect to registry at ${env.REGISTRY_URL}"
-	    dockerRegistryLogin()
+        dockerRegistryLogin()
         echo "Build ${env.IMAGE_NAME}"
         buildResult = docker.build(env.IMAGE_NAME)
         echo "Register ${env.IMAGE_NAME} at ${env.REGISTRY_URL}"
@@ -147,21 +156,37 @@ def getContext(environment) {
     return (env.BRANCH_NAME == 'master') ? environment : 'dev'
 }
 
-def findIp(environment) {
-    def ip = ""
-    withDockerContainer("garland/aws-cli-docker") {
-       ip = sh(returnStdout: true,
-            script: """aws ec2 describe-instances \
-                --filters "Name=instance-state-name,Values=running" \
-                "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \
-                --query "Reservations[].Instances[].{Ip:PrivateIpAddress}" \
-                --output text --region ${env.AWS_REGION} | tr -d '\n'
+
+
+// ================================================================================================
+// Test steps
+// ================================================================================================
+
+def runBrowserTest(environment) {
+    def ip = findIp(environment)
+    def workspace = "./webapp/src/test"
+    def resultsDir = "./webapp/target/browser-test-results"
+    def sitePackagesDir="${workspace}/resources/lib/python2.6/site-packages"
+    def unitTestDir="${workspace}/python"
+    def script = """
+        ls -al
+        export PYTHONPATH="${sitePackagesDir}:${unitTestDir}"
+        mkdir -p ${resultsDir}
+        /usr/bin/python -B -u ./${workspace}/python/helloworld/test_suite.py \
+            "--base-url=http://${ip}" \
+            --webdriver-class=PhantomJS\
+            --reuse-driver \
+            --default-wait=10 \
+            --verbose \
+            --default-window-width=800 \
+            --test-reports-dir=${workspace}/pyton \
+            --results-file=${resultsDir}/results-${env.BUILD_ID}.csv
 """
-        )
+    withDockerContainer("killercentury/python-phantomjs") {
+        sh "${script}"
     }
-    echo "ip=[${ip}]"
-    return ip
 }
+
 
 
 // ================================================================================================
@@ -176,4 +201,20 @@ def proceedTo(environment) {
             parameters: [choice(name: "Deploy to ${environment}", choices: "no\nyes",
                 description: description)]
     }
+}
+
+def findIp(environment) {
+    def ip = ""
+    withDockerContainer("garland/aws-cli-docker") {
+       ip = sh(returnStdout: true,
+            script: """aws ec2 describe-instances \
+                --filters "Name=instance-state-name,Values=running" \
+                "Name=tag:Name,Values=${env.SYSTEM_NAME}-${environment}-helloworld" \
+                --query "Reservations[].Instances[].{Ip:PrivateIpAddress}" \
+                --output text --region ${env.AWS_REGION} | tr -d '\n'
+"""
+        )
+    }
+    echo "ip=[${ip}]"
+    return ip
 }
