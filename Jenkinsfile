@@ -67,6 +67,7 @@ pipeline {
                     testResults: "**/webapp/src/test/python/TEST-*.xml"])
                 sh "ls -lhr ./webapp/target/browser-test-results"
             }
+        }
     }
 }
 
