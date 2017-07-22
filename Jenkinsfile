@@ -1,6 +1,7 @@
 #!groovy
 
 import groovy.json.JsonSlurper
+import java.net.URL
 
 pipeline {
     agent none
@@ -35,7 +36,7 @@ pipeline {
                 deployImage(env.ENVIRONMENT) 
             }
         }
-        stage("Browser Test Dev") {
+        stage("Browser Test in Dev") {
             agent any
             steps {
                 runBrowserTest(env.ENVIRONMENT) 
@@ -58,6 +59,14 @@ pipeline {
                 deployImage('test') 
             }
         }
+        stage("Browser Test in Test") {
+            agent any
+            steps {
+                runBrowserTest('test') 
+                step([$class: 'JUnitResultArchiver',
+                    testResults: "**/webapp/src/test/python/TEST-*.xml"])
+                sh "ls -lhr ./webapp/target/browser-test-results"
+            }
     }
 }
 
@@ -150,12 +159,14 @@ def deployImage(environment) {
             sudo /opt/dso/deploy-app  \"${env.IMAGE_NAME}\" \"${env.REGISTRY_URL}\"
 """
     }
+    echo "Ensure site is up"
+     // TODO: Replace with wait loop that tests if the siste is responsive
+    sleep time: 10, unit: 'SECONDS'
 }
 
 def getContext(environment) {
     return (env.BRANCH_NAME == 'master') ? environment : 'dev'
 }
-
 
 
 // ================================================================================================
@@ -176,18 +187,16 @@ def runBrowserTest(environment) {
             "--base-url=http://${ip}" \
             --webdriver-class=PhantomJS\
             --reuse-driver \
-            --default-wait=10 \
+            --default-wait=30 \
             --verbose \
             --default-window-width=800 \
-            --test-reports-dir=${workspace}/pyton \
+            --test-reports-dir=${workspace}/python \
             --results-file=${resultsDir}/results-${env.BUILD_ID}.csv
 """
     withDockerContainer("killercentury/python-phantomjs") {
         sh "${script}"
     }
 }
-
-
 
 // ================================================================================================
 // Utility steps
