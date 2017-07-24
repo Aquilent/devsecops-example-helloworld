@@ -164,14 +164,14 @@ def getContext(environment) {
 // ================================================================================================
 
 def runSecurityTest() {
-    def sonarReportDir = "target/sonar/issues-report"
+    def sonarReportDir = "target/sonar"
     def jenkinsIP = findJenkinsIp()
     dir("webapp") {
         withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
             sh "mvn sonar:sonar -Dsonar.host.url=http://${jenkinsIP}:9000"
         }
-        //sh "ls -al ${sonarReportDir}"
-        //archiveArtifacts "**/${sonarReportDir}/*"
+        sh "ls -al ${sonarReportDir}"
+        //archiveArtifacts "**/${sonarReportDir}/*.txt"
      }
 }
 
