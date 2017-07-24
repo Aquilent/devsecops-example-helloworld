@@ -15,7 +15,7 @@ pipeline {
             steps { initialize() }
         }
         stage("Build App") {
-            agent { docker "maven:3.5.0-jdk-8-alpine"}
+            agent any 
             steps { buildApp() }
         }
         stage("Build and Register Image") {
@@ -100,11 +100,11 @@ def showEnvironmentVariables() {
 // ================================================================================================
 
 def buildApp() {
-    dir("webapp")  {
-        sh "mvn clean install"
-        archiveArtifacts './target/spring-boot-web-jsp-1.0.war'
+     dir("webapp") {
+        withDockerContainer("maven:3.5.0-jdk-8-alpine") { sh "mvn clean install"}
+        archiveArtifacts '**/target/spring-boot-web-jsp-1.0.war'
         step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'] )
-    }
+     }
 }
 
 def buildAndRegisterDockerImage() {
@@ -183,7 +183,7 @@ def runBrowserTest(environment) {
         withDockerContainer("killercentury/python-phantomjs") { sh "${script}" }
         step([$class: 'JUnitResultArchiver', testResults: "**/${resultsDir}/TEST-*.xml"])
         sh "ls -lhr ${resultsDir}"
-        archiveArtifacts "${resultsPrefix}.*"
+        archiveArtifacts "**/${resultsPrefix}.*"
     }
 }
 
