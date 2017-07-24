@@ -63,8 +63,7 @@ def initialize() {
     env.AWS_REGION = "us-east-1"
     env.REGISTRY_URL = "https://912661153448.dkr.ecr.us-east-1.amazonaws.com"
     env.MAX_ENVIRONMENTNAME_LENGTH = 32
-    env.SONARQUBE_IMAGE_NAME = "${env.JOB_NAME}-sonarqube".replace("/", "-")
-    env.SONAR_IMAGE_ID = getSonarQubeDockerImageId()
+    //env.SONARQUBE_IMAGE_NAME = "${env.JOB_NAME}-sonarqube".replace("/", "-")
     setEnvironment()
     showEnvironmentVariables()
 }
@@ -168,13 +167,11 @@ def runSecurityTest() {
     def sonarReportDir = "target/sonar/issues-report"
     def jenkinsIP = findJenkinsIp()
     dir("webapp") {
-        startSonarQube()
-        withDockerContainer(args:"--net=host", image: "maven:3.5.0-jdk-8-alpine")  {
+        withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
             sh "mvn sonar:sonar -Dsonar.host.url=http://${jenkinsIP}:9000"
         }
         sh "ls -al ${sonarReportDir}"
-        archiveArtifacts '**/${sonarReportDir}/*'
-        stopSonarQube()
+        archiveArtifacts "**/${sonarReportDir}/*"
      }
 }
 
@@ -253,28 +250,28 @@ def findJenkinsIp() {
     return ip
 }
 
-def startSonarQube(def restart = false) {
-    if (restart|| (env.SONAR_IMAGE_ID == "")) {
-        if (restart) {
-            echo "Restarting SonarQube"
-            stopSonarQube()
-        }
-        sh " docker run -d --name ${env.SONARQUBE_IMAGE_NAME} -p 9000:9000 -p 9092:9092 sonarqube"
-    } else {
-        echo "SonarQube already running"
-    }
-}
+// def startSonarQube() {
+//     if (!isSonarQubeRunning()) {
+//         echo "Restarting SonarQube"
+//         stopSonarQube()
+//         sh "docker run -d --name ${env.SONARQUBE_IMAGE_NAME} -p 9000:9000 -p 9092:9092 sonarqube"
+//     } else {
+//         echo "SonarQube already running"
+//     }
+// }
 
-def stopSonarQube() {
-    if (env.SONAR_IMAGE_ID != "") {
-        sh "docker stop ${env.SONARQUBE_IMAGE_NAME}"
-        sh "docker rm ${env.SONARQUBE_IMAGE_NAME}"
-    }
-}
+// def stopSonarQube() {
+//     if (isSonarQubeRunning()) {
+//         sh "docker stop ${env.SONARQUBE_IMAGE_NAME}"
+//         sh "docker rm ${env.SONARQUBE_IMAGE_NAME}"
+//     }
+// }
 
-def getSonarQubeDockerImageId() {
-    def imageId = sh(returnStdout: true, script: """
-        docker ps | grep '${env.SONARQUBE_IMAGE_NAME}' | awk -F" " '{print \$1;}' | tr -d '\n'
-"""
-    )
-}
+// def isSonarQubeRunning() {
+//     def imageID = sh(returnStdout: true, script: """
+//         docker ps | grep '${env.SONARQUBE_IMAGE_NAME}' | awk -F" " '{print \$1;}' | tr -d '\n'
+// """
+//     )
+//     echo "SonarQube ImageID=${imageID}"
+//     return (imageID?.trim())
+// }
