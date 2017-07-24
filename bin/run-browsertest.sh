@@ -25,7 +25,7 @@ ARGS+=("--default-wait=10")
 ARGS+=("--verbose")
 ARGS+=("--default-window-width=800")
 ARGS+=("--results-file=${RESULTS_DIR}/results.csv")
-ARGS+=("--test-reports-dir=${WORKSPACE}/python")
+ARGS+=("--test-reports-dir=${RESULTS_DIR}")
 
 CMD="export PYTHONPATH=${WORKSPACE}\/resources\/lib\/python2.6\/site-packages:${WORKSPACE}\/python"
 CMD="${CMD};mkdir -p ${RESULTS_DIR}"

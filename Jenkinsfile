@@ -100,9 +100,11 @@ def showEnvironmentVariables() {
 // ================================================================================================
 
 def buildApp() {
-    sh "(cd ./webapp; mvn clean install)"
-    archiveArtifacts './target/spring-boot-web-jsp-1.0.war'
-    step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'] )
+    dir("webapp")  {
+        sh "mvn clean install"
+        archiveArtifacts './target/spring-boot-web-jsp-1.0.war'
+        step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'] )
+    }
 }
 
 def buildAndRegisterDockerImage() {
@@ -159,30 +161,30 @@ def getContext(environment) {
 
 def runBrowserTest(environment) {
     def ip = findIp(environment)
-    def workspace = "./webapp/src/test"
-    def resultsDir = "./webapp/target/browser-test-results/${environment}"
+    def workDir = "src/test"
+    def testsDir="${workDir}/python"
+    def resultsDir = "target/browser-test-results/${environment}"
     def resultsPrefix = "${resultsDir}/results-${env.BUILD_ID}"
-    def sitePackagesDir="${workspace}/resources/lib/python2.6/site-packages"
-    def unitTestDir="${workspace}/python"
+    def sitePackagesDir="${workDir}/resources/lib/python2.6/site-packages"
     def script = """
-        ls -al
-        export PYTHONPATH="${sitePackagesDir}:${unitTestDir}"
+        export PYTHONPATH="${sitePackagesDir}:${testsDir}"
         mkdir -p ${resultsDir}
-        /usr/bin/python -B -u ./${workspace}/python/helloworld/test_suite.py \
+        /usr/bin/python -B -u ./${testsDir}/helloworld/test_suite.py \
             "--base-url=http://${ip}" \
             --webdriver-class=PhantomJS\
             --reuse-driver \
-            --default-wait=30 \
+            --default-wait=15 \
             --verbose \
             --default-window-width=800 \
-            --test-reports-dir=${workspace}/python \
+            --test-reports-dir=${resultsDir} \
             --results-file=${resultsPrefix}.csv
 """
-    withDockerContainer("killercentury/python-phantomjs") { sh "${script}" }
-    step([$class: 'JUnitResultArchiver', testResults: "**/webapp/src/test/python/TEST-*.xml"])
-    sh "ls -lhr ${resultsDir}"
-    archiveArtifacts '${resultsPrefix}.csv'
-    archiveArtifacts '${resultsPrefix}.html'
+    dir("webapp") {
+        withDockerContainer("killercentury/python-phantomjs") { sh "${script}" }
+        step([$class: 'JUnitResultArchiver', testResults: "**/${resultsDir}/TEST-*.xml"])
+        sh "ls -lhr ${resultsDir}"
+        archiveArtifacts "${resultsPrefix}.*"
+    }
 }
 
 // ================================================================================================
