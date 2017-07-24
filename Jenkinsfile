@@ -18,6 +18,10 @@ pipeline {
             agent any 
             steps { buildApp() }
         }
+        stage("Run App Security Scan") {
+            agent any 
+            steps {  runSecurityTest() }
+        }
         stage("Build and Register Image") {
             agent any
             steps { buildAndRegisterDockerImage()  }
@@ -59,6 +63,8 @@ def initialize() {
     env.AWS_REGION = "us-east-1"
     env.REGISTRY_URL = "https://912661153448.dkr.ecr.us-east-1.amazonaws.com"
     env.MAX_ENVIRONMENTNAME_LENGTH = 32
+    env.SONARQUBE_IMAGE_NAME = "${env.JOB_NAME}-sonarqube".replace("/", "-")
+    env.SONAR_IMAGE_ID = getSonarQubeDockerImageId()
     setEnvironment()
     showEnvironmentVariables()
 }
@@ -135,7 +141,6 @@ def dockerRegistryLogin() {
 // Deploy steps
 // ================================================================================================
 
-
 def deployImage(environment) {
     def context = getContext(environment)
     def ip = findIp(environment)
@@ -159,6 +164,20 @@ def getContext(environment) {
 // Test steps
 // ================================================================================================
 
+def runSecurityTest() {
+    def sonarReportDir = "target/sonar/issues-report"
+    def jenkinsIP = findJenkinsIp()
+    dir("webapp") {
+        startSonarQube()
+        withDockerContainer(args:"--net=host", image: "maven:3.5.0-jdk-8-alpine")  {
+            sh "mvn sonar:sonar -Dsonar.host.url=http://${jenkinsIP}:9000"
+        }
+        sh "ls -al ${sonarReportDir}"
+        archiveArtifacts '**/${sonarReportDir}/*'
+        stopSonarQube()
+     }
+}
+
 def runBrowserTest(environment) {
     def ip = findIp(environment)
     def workDir = "src/test"
@@ -173,6 +192,7 @@ def runBrowserTest(environment) {
             "--base-url=http://${ip}" \
             --webdriver-class=PhantomJS\
             --reuse-driver \
+            --environment ${environment} \
             --default-wait=15 \
             --verbose \
             --default-window-width=800 \
@@ -215,4 +235,46 @@ def findIp(environment) {
     }
     echo "ip=[${ip}]"
     return ip
+}
+
+def findJenkinsIp() {
+    def ip = ""
+    withDockerContainer("garland/aws-cli-docker") {
+       ip = sh(returnStdout: true,
+            script: """aws ec2 describe-instances \
+                --filters "Name=instance-state-name,Values=running" \
+                "Name=tag:Name,Values=${env.SYSTEM_NAME}-shared-jenkins" \
+                --query "Reservations[].Instances[].{Ip:PrivateIpAddress}" \
+                --output text --region ${env.AWS_REGION} | tr -d '\n'
+"""
+        )
+    }
+    echo "ip=[${ip}]"
+    return ip
+}
+
+def startSonarQube(def restart = false) {
+    if (restart|| (env.SONAR_IMAGE_ID == "")) {
+        if (restart) {
+            echo "Restarting SonarQube"
+            stopSonarQube()
+        }
+        sh " docker run -d --name ${env.SONARQUBE_IMAGE_NAME} -p 9000:9000 -p 9092:9092 sonarqube"
+    } else {
+        echo "SonarQube already running"
+    }
+}
+
+def stopSonarQube() {
+    if (env.SONAR_IMAGE_ID != "") {
+        sh "docker stop ${env.SONARQUBE_IMAGE_NAME}"
+        sh "docker rm ${env.SONARQUBE_IMAGE_NAME}"
+    }
+}
+
+def getSonarQubeDockerImageId() {
+    def imageId = sh(returnStdout: true, script: """
+        docker ps | grep '${env.SONARQUBE_IMAGE_NAME}' | awk -F" " '{print \$1;}' | tr -d '\n'
+"""
+    )
 }

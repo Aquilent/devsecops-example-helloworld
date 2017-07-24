@@ -20,6 +20,8 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<sonar.language>java</sonar.language>
+		<sonar.analysis.mode>preview</sonar.analysis.mode>
+		<sonar.issuesReport.html.enable>true</sonar.issuesReport.html.enable>
 	</properties>
 
 	<dependencies>

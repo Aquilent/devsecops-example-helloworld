@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+WEBSITE_URL="$1"
+
+if [ "${WEBSITE_URL}" == "" ]; then
+    WEBSITE_URL="http:\/52.72.139.105"
+fi
+
+
 PYTHON_IMAGE="killercentury/python-phantomjs"
 
 function get_parent {
@@ -18,7 +25,7 @@ WORKSPACE="\/project\/src\/test"
 RESULTS_DIR="\/project\/target\/browser-test-results"
 
 ARGS=()
-ARGS+=("--base-url=http:\/52.72.139.105")
+ARGS+=("--base-url=${WEBSITE_URL}")
 ARGS+=("--webdriver-class=PhantomJS")
 ARGS+=("--reuse-driver")
 ARGS+=("--default-wait=10")

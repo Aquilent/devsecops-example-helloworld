@@ -18,8 +18,6 @@ function get_absolute_path {
 REPO_DIR=$(get_parent $0)
 REPO_HOME=$(get_absolute_path "${REPO_DIR}")
 
-WORK_DIR="/${REPO_HOME}/webapp"
-
 winpty docker run --name maven --rm \
     --volume "/${REPO_HOME}/webapp:/project" \
     "${MAVEN_IMAGE}" \
