@@ -30,8 +30,6 @@ pipeline {
             agent any
             steps { runBrowserTest(env.ENVIRONMENT)  }
         }
-        // Do not deploy non-master branches to subsequent environments
-        // These branches must be merged via a PR to the master branch first
         stage("Proceed to test?") {
             agent none
             when { branch 'master' } 
@@ -103,7 +101,7 @@ def showEnvironmentVariables() {
 
 def buildApp() {
     sh "(cd ./webapp; mvn clean install)"
-    archiveArtifacts './webapp/target/spring-boot-web-jsp-1.0.war'
+    archiveArtifacts './target/spring-boot-web-jsp-1.0.war'
     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'] )
 }
 
@@ -183,8 +181,8 @@ def runBrowserTest(environment) {
     withDockerContainer("killercentury/python-phantomjs") { sh "${script}" }
     step([$class: 'JUnitResultArchiver', testResults: "**/webapp/src/test/python/TEST-*.xml"])
     sh "ls -lhr ${resultsDir}"
-    //archiveArtifacts '${resultsPrefix}.csv'
-    //archiveArtifacts '${resultsPrefix}.html'
+    archiveArtifacts '${resultsPrefix}.csv'
+    archiveArtifacts '${resultsPrefix}.html'
 }
 
 // ================================================================================================
