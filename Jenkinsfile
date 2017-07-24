@@ -30,10 +30,10 @@ pipeline {
             agent any
             steps { runBrowserTest(env.ENVIRONMENT)  }
         }
+        // Do not deploy non-master branches to subsequent environments
+        // These branches must be merged via a PR to the master branch first
         stage("Proceed to test?") {
             agent none
-            // Do not deploy non-master branches to test
-            // These branches must be merged via a PR to the master branch first
             when { branch 'master' } 
             steps { proceedTo('test') }
         }
@@ -44,6 +44,7 @@ pipeline {
         }
         stage("Browser Test in Test") {
             agent any
+            when { branch 'master' } 
             steps { runBrowserTest('test')  }
         }
     }
@@ -182,7 +183,8 @@ def runBrowserTest(environment) {
     withDockerContainer("killercentury/python-phantomjs") { sh "${script}" }
     step([$class: 'JUnitResultArchiver', testResults: "**/webapp/src/test/python/TEST-*.xml"])
     sh "ls -lhr ${resultsDir}"
-    archiveArtifacts '${resultsPrefix}.*'
+    //archiveArtifacts '${resultsPrefix}.csv'
+    //archiveArtifacts '${resultsPrefix}.html'
 }
 
 // ================================================================================================
