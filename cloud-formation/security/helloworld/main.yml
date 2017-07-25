@@ -360,7 +360,8 @@ Resources:
               - "s3:GetObjectAcl"
               - "s3:GetObjectTagging"
             Resource: 
-              - !Sub "arn:aws:s3:::${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/*" 
+              - !Sub "arn:aws:s3:::${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/helloworld-app/*" 
+              - !Sub "arn:aws:s3:::${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}-*/helloworld-app/*" 
           - Sid: "GetApplicationObjects"
             Effect: "Allow"
             Action: 

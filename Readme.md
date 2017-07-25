@@ -1,4 +1,4 @@
-# CI/CD Pipeline Example
+# DevSecOps CI/CD Pipeline Example
 
 # Jenkins Multibranch Pipeline
 
@@ -34,31 +34,34 @@ and code review.
    This step times out after some (configurable amount of) time.
 9. Deploy the image to the `prod` environment
 
-The following is an example of this pipeline as run inside of Jenkins:
-   ![Jenkins Ppeline](./doc/images/Jenkins-hello-world-master.png)
+Example of this pipeline:
+   ![Jenkins Pipeline](./doc/images/Jenkins-hello-world-master.png)
 
-Example of the pause step:
+Example of the pause step (step 8):
    ![Pause Pipeline](./doc/images/Jenkins-hello-world-master-pause.png)
 
-In the above steps, steps 5 and up in the pipeline are __only__ executed against the 
-`master` branch.
-The pipeline code is configured to treat feature/bugfix branches as additional `dev` environments.
+Note that in the above steps, steps 5 and up in the pipeline are __only__ 
+executed against the `master` branch.
+The pipeline code is configured to treat development (feature/bugfix) branches as
+additional `dev` environments.
 These temporary additional `dev` environments can quickly be created using the application's
 [cloud-formation script](./cloud-formation/helloworld/app/main.yml) and
-setting the `Environment` parameter to `dev-<feature>` and the `SecurityContext` parameter to `dev`.
-The new `dev-<feature>` environment now operates in the same security context as the `dev`
+setting the `Environment` parameter to `dev-<branch-name>` and the `SecurityContext` parameter
+to `dev`.
+The new `dev-<branch-name>` environment now operates in the same security context as the `dev`
 environment`.
 
 Now when a new temporary development branch is created of the master branch,
-the Jenkins pipeline will discover the new branch and execute the pipeline code from 
-that spefific branch.
-
+the Jenkins pipeline will automatically discover the new branch and
+execute the pipeline code from that specific branch allow a developer to build and test
+the branch specific changes in isolation, including changes to the pipeline code.
 
 
 ## Development Process
 
-The (typical) development process consists of the following steps:
-1.  A User Story (or Bug) ticket is assigned to a developer
+The following outlines how this development pipeline would be used in a (typical) development
+process:
+1.  A user story (or bug) ticket is assigned to a developer
 2.  Create a temporary and short-lived development (feature/bugfix) branch environment
     using the Hello World application
     [cloud formation script](../cloud-formation/helloworld/app/main.yml).
@@ -67,13 +70,15 @@ The (typical) development process consists of the following steps:
 3.  A development branch is created in the repository using the format feature/<name> or 
     bug-fix/<name> from the `master` branch
 4.  The developer implements and tests the changes, include new and/or updated automated tests.
-5.  Changes are committed to the branch and tested
+5.  Changes are committed to the branch and tested.
+    The developer references the ticket in the commit message to allow for integration
+    with the ticketing system, e. GitHub-Jira Integration.
 6.  Changes are pushed to the central git server.
 7.  A git webhook triggers the Jenkins pipeline for the feature branch.
 8.  If pipeline build fails, either fix infrastructure issue, or return to step 3
 9.  Manually test the changes
 10. Once satisfied acceptance criteria are met, create a Pull Request (PR) to the master branch 
-   and assign a reviewer.
+    and assign a reviewer.
 11. Reviewer verifies changes.
 12. If not accepted, return to step 3
 13. Reviewer accepts changes, the reviewer or developer merges the PR into `master` and 
@@ -117,3 +122,4 @@ The (typical) development process consists of the following steps:
 [Python Selenium Webdriver API binding]: http://selenium-python.readthedocs.io/api.html
 [Apache Maven]: https://maven.apache.org/
 [SonarQube]: https://www.sonarqube.org/
+[GitHub-Jira Integration]: https://confluence.atlassian.com/adminjiracloud/connect-jira-cloud-to-github-814188429.html
