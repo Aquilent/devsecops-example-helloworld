@@ -64,12 +64,13 @@ pipeline {
 
 def initialize() {
     env.SYSTEM_NAME = "DSO"
-    env.IMAGE_NAME = "hello-world:${env.BUILD_ID}"
     env.AWS_REGION = "us-east-1"
     env.REGISTRY_URL = "https://912661153448.dkr.ecr.us-east-1.amazonaws.com"
     env.MAX_ENVIRONMENTNAME_LENGTH = 32
-    //env.SONARQUBE_IMAGE_NAME = "${env.JOB_NAME}-sonarqube".replace("/", "-")
     setEnvironment()
+    env.IMAGE_NAME = "hello-world:" + 
+        ((branchName == "master") ? "" : "${env.ENVIRONMENT}-") + 
+        env.BUILD_ID
     showEnvironmentVariables()
 }
 
@@ -94,7 +95,7 @@ def setEnvironment() {
         }
         // echo "limit length"
         branchName = branchName.take(env.MAX_ENVIRONMENTNAME_LENGTH as Integer)
-        environment += branchName
+        environment += "-" + branchName
     }
     echo "Using environment: ${environment}"
     env.ENVIRONMENT = environment
