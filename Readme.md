@@ -34,11 +34,14 @@ and code review.
    This step times out after some (configurable amount of) time.
 9. Deploy the image to the `prod` environment
 
-Example of this pipeline:
+Pipeline executions:
    ![Jenkins Pipeline](./doc/images/Jenkins-hello-world-master.png)
 
-Example of the pause step (step 8):
+Pause step (step 8):
    ![Pause Pipeline](./doc/images/Jenkins-hello-world-master-pause.png)
+
+SonarQube (security scan) output:
+   ![SonarQube](./doc/images/SonarQube-Example.png)
 
 Note that in the above steps, steps 5 and up in the pipeline are __only__ 
 executed against the `master` branch.
