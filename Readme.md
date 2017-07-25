@@ -59,6 +59,13 @@ the Jenkins pipeline will automatically discover the new branch and
 execute the pipeline code from that specific branch allow a developer to build and test
 the branch specific changes in isolation, including changes to the pipeline code.
 
+Multiple branch executions (`feature1` and `master`) after creating the `feature1` branch:
+![Multiple branch executions](./doc/images/Jenkins-hello-world-multiple-branches.png)
+
+Development branch (`feature`) execution details:
+![Multiple branch executions](./doc/images/Jenkins-hello-world-development-branch-execution.png)
+
+
 
 ## Development Process
 
