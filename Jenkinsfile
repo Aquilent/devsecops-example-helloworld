@@ -34,11 +34,6 @@ pipeline {
             agent any
             steps { runBrowserTest(env.ENVIRONMENT)  }
         }
-        stage("Proceed to test?") {
-            agent none
-            when { branch 'master' } 
-            steps { proceedTo('test') }
-        }
         stage("Deploy Image to Test") {
             agent any
             when { branch 'master' } 
@@ -48,6 +43,16 @@ pipeline {
             agent any
             when { branch 'master' } 
             steps { runBrowserTest('test')  }
+        }
+        stage("Proceed to prod?") {
+            agent none
+            when { branch 'master' } 
+            steps { proceedTo('prod') }
+        }
+        stage("Deploy Image to Prod") {
+            agent any
+            when { branch 'master' } 
+            steps { deployImage('prod')  }
         }
     }
 }
