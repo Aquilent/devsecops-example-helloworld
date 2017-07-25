@@ -60,7 +60,7 @@ Note that:
   so when you plan to use the default create a key pairs using DSO for <system>, 
   e.g. `DSO-shared-jenkins`.
 
-  ![EC2 Key Pairs Example](./ec2-key-pairs.png)
+  ![EC2 Key Pairs Example](./images/ec2-key-pairs.png)
 
 
 ## Install common AWS Resources:
@@ -102,7 +102,10 @@ scripts and subsequently configure Jenkins:
    - `ProvisioningBucket`. The name ofn AWS S3 Bucket you created in the prerequisites.
      Create the forementioned 'folder' structure in ths S3 bucket using
      `<your bucket>/cloud-formation/<system, default:DSO>/shared/jenkins-app` and
-     upload files `bootstrap-jenkins.sh` and `etc-init-d-jenkins.sh` into this 'folder'
+     upload file `etc-init-d-jenkins.sh` into this 'folder'
+     
+     ![S3 Example](./images/S3-Provisioning-Bucket-Structure.png)
+
 
 4. Configure Jenkins:
 
@@ -169,7 +172,7 @@ Repeat these steps passing `dev`, `test`, and `prod` as the parameter values for
 
 Once completed you should something similar to the following in your AWS Cloud Formation console:
 
-![Cloud Formation stack](./HelloWorld-CloudFormation-Stacks.png)
+![Cloud Formation stack](./images/HelloWorld-CloudFormation-Stacks.png)
 
 
 [AWS EC2 keypair]: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
