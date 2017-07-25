@@ -51,7 +51,7 @@ pipeline {
         }
         stage("Deploy Image to Prod") {
             agent any
-            when { branch 'master' } 
+            when { expression { (env.BRANCH_NAME == 'master') && (env.PROCEED_TO_PROD == 'yes' ) } }
             steps { deployImage('prod')  }
         }
     }
@@ -217,8 +217,9 @@ def runBrowserTest(environment) {
 def proceedTo(environment) {
     def description = "Choose 'yes' if you want to deploy to this build to " + 
         "the ${environment} environment"
+    def proceedVariable =  + environment.toUpperCase()
     timeout(time: 4, unit: 'HOURS') {
-        env.PROCEED_TO_TEST = input message: "Do you want to deploy the changes to ${environment}?",
+        env[proceedVariable] = input message: "Do you want to deploy the changes to ${environment}?",
             parameters: [choice(name: "Deploy to ${environment}", choices: "no\nyes",
                 description: description)]
     }
