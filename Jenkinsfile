@@ -69,7 +69,7 @@ def initialize() {
     env.MAX_ENVIRONMENTNAME_LENGTH = 32
     setEnvironment()
     env.IMAGE_NAME = "hello-world:" + 
-        ((branchName == "master") ? "" : "${env.ENVIRONMENT}-") + 
+        ((env.BRANCH_NAME.toLowerCase() == "master") ? "" : "${env.ENVIRONMENT}-") + 
         env.BUILD_ID
     showEnvironmentVariables()
 }
