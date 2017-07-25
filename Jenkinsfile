@@ -219,7 +219,7 @@ def proceedTo(environment) {
         "the ${environment} environment"
     def proceed = 'no'
     timeout(time: 4, unit: 'HOURS') {
-        def proceed = input message: "Do you want to deploy the changes to ${environment}?",
+        proceed = input message: "Do you want to deploy the changes to ${environment}?",
             parameters: [choice(name: "Deploy to ${environment}", choices: "no\nyes",
                 description: description)]
         if (proceed == 'no') {
