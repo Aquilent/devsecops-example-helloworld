@@ -17,8 +17,8 @@
    Allow for some manual tests to be executed before 
    This step times out after some (configurable amount of) time.
 
-   [!Pause Pipeline](./doc/images/Jenkins-hello-world-master-pause.png)
-   
+   ![Pause Pipeline](./doc/images/Jenkins-hello-world-master-pause.png)
+
 9. Deploy the image to the `prod` environment
 
 
