@@ -72,6 +72,44 @@ To install the common AWS VPC and IAM resources run the following cloud-formatio
    using the listed [policy](../cloud-formation/security/shared/default-stack-policy.json)
 
 
+## Install the helloworld application on EC2 instances for a dev, test, and prod environment:
+
+Repeat these steps passing `dev`, `test`, and `prod` as the parameter values for the 
+`Environment` parameter in the various stacks:
+
+1. Run the cloud-formation stack in [network/hello-world](../cloud-formation/network/helloworld)
+   using the listed [policy](../cloud-formation/network/helloworld/default-stack-policy.json)
+   Pass a value for parameter:
+   - `Environment`. Either `dev`, `test`, or `prod`
+   - `ApplicationCIDRBlock`. This CIDR Block must fall within the VPC `CIDRBlock`,
+     e.g. `172.27.x.0/24` (where x is 10 for `dev`, 20 for `test` and 30 for `prod`).
+2. Run the cloud-formation stack in [security/hello-world](../cloud-formation/security/helloworld/main.yml)
+   using the listed [policy](../cloud-formation/security/helloworld/default-stack-policy.json)
+   Pass a value for parameter:
+   - `Environment`. Either `dev`, `test`, or `prod`
+   - `VPCCIDRBlock` that matches the earlier value (see common AWS Resources).
+   - `PrivilegedCIDRx` (for x=1..5) to enable access to resources on the private 
+      Jenkins subnet. At least one privileged address is needed to be able to obtain the 
+      initial Jenkins administrator password.
+3. Run the cloud-formation stack in [helloworld/app](../cloud-formation/helloworld/app/main.yml)
+   using the listed [policy](../cloud-formation/helloworld/app/default-stack-policy.json)
+   Pass a value for parameter:
+   - `Environment`. Either `dev`, `test`, or `prod`.
+   - `SecurityContext`. Match the value of `Environment`.
+   
+   To verify that application instance is install, browse to
+      `http://<PublicIP output value of Stack>`.
+   Initially the provisioning scripts sets up a web application using the 
+   [kitematic/hello-world-nginx](https://hub.docker.com/r/kitematic/hello-world-nginx/)
+   docker image.
+   Once the [pipeline](../Jenkinsfile) is executed this application will be automatically
+   replaced with the actual [hello world](../webapp/sc/main) application using the
+   [Docker image[../Dockerfile)]
+
+Once completed you should something similar to the following in your AWS Cloud Formation console:
+
+![Cloud Formation stack](./images/HelloWorld-CloudFormation-Stacks.png)
+
 ## Install Jenkins on EC2 instance:
 To install the the AWS resources for the Jenkins instance run the following cloud-formation
 scripts and subsequently configure Jenkins:
@@ -114,7 +152,7 @@ scripts and subsequently configure Jenkins:
    d. Next install the SSH and SSH Agent plugins under `Manage Jenkins > Manage Plugins`
    
    e. Create the following credentials under `Credentials > global`
-      - A valid Git credential (ID: `*any*`)
+      - (Optional, if repo is private) A valid Git credential (ID: `*any*`)
       - An SSH Username with private key for the hello-world dev app instance 
         (ID: `DSO-dev-helloworld`, Username: `ec2-user`) using the private key from 
         the matching EC2 Keypair
@@ -127,45 +165,23 @@ scripts and subsequently configure Jenkins:
 
     f. Add users as appropriate under `Manage Jenkins > Manage Users`
 
+5. Setup the multi-pipeline job for the Hello World Application 
+ 
+    a. Create the job using `New Item` with item name `hello-world-app` and 
+       the `Multibranch pipeline` option
+    b. Specify a `Hello World application` as the Display Name (Optional)
+    c. Add your GitHub repo as a source using the `Add Source` button with the GitHub option
+       - Select the github Credentials ID you created earlier (if repo is private)
+       - Enter your organization's name, e.g. `boozallen`
+       - Select the repository, e.g. `devsecops-example-helloworld`
+       - Select the `Save` button
+    
+    Your Jenkins pipeline should now start to discover the branches in the designated
+    repository, and once it discovers the Jenkinsfile, start to build all branches found.
+    If you have multiple branches and want to limit building to the `master` branch you can
+    add a `Filter by Name` Behavior before selecting `Save`
 
 
-## Install the helloworld application on EC2 instances for a dev, test, and prod environment:
-
-Repeat these steps passing `dev`, `test`, and `prod` as the parameter values for the 
-`Environment` parameter in the various stacks:
-
-1. Run the cloud-formation stack in [network/hello-world](../cloud-formation/network/helloworld)
-   using the listed [policy](../cloud-formation/network/helloworld/default-stack-policy.json)
-   Pass a value for parameter:
-   - `Environment`. Either `dev`, `test`, or `prod`
-   - `ApplicationCIDRBlock`. This CIDR Block must fall within the VPC `CIDRBlock`,
-     e.g. `172.27.x.0/24` (where x is 10 for `dev`, 20 for `test` and 30 for `prod`).
-2. Run the cloud-formation stack in [security/hello-world](../cloud-formation/security/helloworld/main.yml)
-   using the listed [policy](../cloud-formation/security/helloworld/default-stack-policy.json)
-   Pass a value for parameter:
-   - `Environment`. Either `dev`, `test`, or `prod`
-   - `VPCCIDRBlock` that matches the earlier value (see common AWS Resources).
-   - `PrivilegedCIDRx` (for x=1..5) to enable access to resources on the private 
-      Jenkins subnet. At least one privileged address is needed to be able to obtain the 
-      initial Jenkins administrator password.
-3. Run the cloud-formation stack in [helloworld/app](../cloud-formation/helloworld/app/main.yml)
-   using the listed [policy](../cloud-formation/helloworld/app/default-stack-policy.json)
-   Pass a value for parameter:
-   - `Environment`. Either `dev`, `test`, or `prod`.
-   - `SecurityContext`. Match the value of `Environment`.
-   
-   To verify that application instance is install, browse to
-      `http://<PublicIP output value of Stack>`.
-   Initially the provisioning scripts sets up a web application using the 
-   [kitematic/hello-world-nginx](https://hub.docker.com/r/kitematic/hello-world-nginx/)
-   docker image.
-   Once the [pipeline](../Jenkinsfile) is executed this application will be automatically
-   replaced with the actual [hello world](../webapp/sc/main) application using the
-   [Docker image[../Dockerfile)]
-
-Once completed you should something similar to the following in your AWS Cloud Formation console:
-
-![Cloud Formation stack](./images/HelloWorld-CloudFormation-Stacks.png)
 
 
 [AWS EC2 keypair]: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
