@@ -1,11 +1,23 @@
-# DevSecOps Example CD/CD Pipeline
+# CI/CD Pipeline Example
 
 # Jenkins Multibranch Pipeline
 
-This example uses a [Jenkins multi-branch pipelines]
+This example uses a [Jenkins multi-branch pipelines].
 The code for this pipeline can be found [here](./Jenkinsfile).
 
-## Steps
+Jenkins multi-branch pipelines build all your branches in your repository under source code
+control (e.g. github) automatically. Note that you can explicitly include/exclude branch using
+regular expressions.
+This allows for a development approach with short-lived feature and bugfix 
+branches that can be build, deployed, and tested simultaneously.
+This is important, because it  allows developers to update and test the pipeline as part of 
+the change request (or bugfix) they are working on,
+so the pipeline code always stays in sync with the the application code.
+Furthermore, __"standard"__ development processes can now not only be applied to the
+application code, but also to the pipeline code, specifically source code control, testing, 
+and code review.
+
+## Pipeline Steps
 
 1. Build the Java [Spring Boot] [application](./webapp/src/main) using [Apache Maven]
    This includes running [unit tests](./webapp/src/test//java).
@@ -28,18 +40,6 @@ The following is an example of this pipeline as run inside of Jenkins:
 Example of the pause step:
    ![Pause Pipeline](./doc/images/Jenkins-hello-world-master-pause.png)
 
-Jenkins multi-branch pipelines build all your branches in your repository under source code
-control (e.g. github) automatically. NOte that you can explicitly include/exclude branch using
-regular expressions.
-This allows for a development approach with short-lived feature and bugfix 
-branches that can be build, deployed, and tested simultaneously.
-This is important, because it  allows developers to update and test the pipeline as part of 
-the change request (or bugfix) they are working on,
-so the pipeline code always stays in sync with the the application code.
-Furthermore, __"standard"__ development processes can now not only be applied to the
-application code, but also to the pipeline code, specifically source code control, testing, 
-and code review.
-
 In the above steps, steps 5 and up in the pipeline are __only__ executed against the 
 `master` branch.
 The pipeline code is configured to treat feature/bugfix branches as additional `dev` environments.
@@ -48,8 +48,6 @@ These temporary additional `dev` environments can quickly be created using the a
 setting the `Environment` parameter to `dev-<feature>` and the `SecurityContext` parameter to `dev`.
 The new `dev-<feature>` environment now operates in the same security context as the `dev`
 environment`.
-The advantage is that these temporary environments allow for a 'clean' start of development and 
-testing.
 
 Now when a new temporary development branch is created of the master branch,
 the Jenkins pipeline will discover the new branch and execute the pipeline code from 
