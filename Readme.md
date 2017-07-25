@@ -3,7 +3,7 @@
 # Jenkins Multibranch Pipeline
 
 This example uses a [Jenkins multi-branch pipelines]
-The code for this pipeline can be found [here](../Jenkinsfile).
+The code for this pipeline can be found [here](./Jenkinsfile).
 
 ## Steps
 
