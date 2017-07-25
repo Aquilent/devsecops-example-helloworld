@@ -4,6 +4,7 @@ Parameters:
   System: 
     Type: String
     Description: "The name of the system to be used as a part of the prefix for all resource names"
+    Default: DSO
   Environment: 
     Type: String
     Description: "The name of the environment to be used as a part of the prefix for all resource names"

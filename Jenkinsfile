@@ -30,7 +30,7 @@ pipeline {
             agent any
             steps { deployImage(env.ENVIRONMENT)  }
         }
-        stage("Browser Test in Dev") {
+        stage("Test App in Dev") {
             agent any
             steps { runBrowserTest(env.ENVIRONMENT)  }
         }
@@ -39,7 +39,7 @@ pipeline {
             when { branch 'master' } 
             steps { deployImage('test')  }
         }
-        stage("Browser Test in Test") {
+        stage("Test App in Test") {
             agent any
             when { branch 'master' } 
             steps { runBrowserTest('test')  }

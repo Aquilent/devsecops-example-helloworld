@@ -4,6 +4,7 @@ Parameters:
   System: 
     Type: String
     Description: "The name of the system to be used as a part of the prefix for all resource names"
+    Default: DSO
   Region: 
     Type: String
     Description: "The region in which the Downloads resources will be provisioned"
