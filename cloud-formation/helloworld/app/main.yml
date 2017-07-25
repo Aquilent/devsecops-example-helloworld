@@ -42,7 +42,7 @@ Resources:
       SourceDestCheck: false
       IamInstanceProfile:
         Fn::ImportValue:
-          !Sub "${System}-${Environment}-helloworld-InstanceProfile"
+          !Sub "${System}-${SecurityContext}-helloworld-InstanceProfile"
       ImageId: !Ref InstanceAMI
       InstanceType: !Ref InstanceType
       KeyName: !Sub "${System}-${SecurityContext}-helloworld"
@@ -63,12 +63,12 @@ Resources:
           DeviceIndex: 0
           SubnetId:
             Fn::ImportValue:
-              !Sub "${System}-${Environment}-helloworld-SubnetAZ1"
+              !Sub "${System}-${SecurityContext}-helloworld-SubnetAZ1"
           GroupSet:
             - Fn::ImportValue:
                 !Sub "${System}-${SharedEnvironment}-ssh-securitygroup"
             - Fn::ImportValue:
-                !Sub "${System}-${Environment}-helloworld-SecurityGroup"
+                !Sub "${System}-${SecurityContext}-helloworld-SecurityGroup"
       UserData: 
         Fn::Base64: !Sub |
           #!/bin/bash -ex
@@ -170,7 +170,7 @@ Resources:
       AWS::CloudFormation::Authentication:
         S3AccessCredentials:
           type: "S3"
-          roleName: !Sub "${System}-${Environment}-helloworld"
+          roleName: !Sub "${System}-${SecurityContext}-helloworld"
           buckets: 
             - !Ref ProvisioningBucket
       AWS::CloudFormation::Init: 
