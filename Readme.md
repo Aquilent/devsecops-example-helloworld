@@ -34,6 +34,9 @@ and code review.
    This step times out after some (configurable amount of) time.
 9. Deploy the image to the `prod` (or live) environment
 
+Web Application:
+  ![Hello World web app](./doc/images/hello-world-webapp.png)
+
 Pipeline executions:
    ![Jenkins Pipeline](./doc/images/Jenkins-hello-world-master.png)
 
