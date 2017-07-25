@@ -22,7 +22,7 @@ and code review.
 1. Build the Java [Spring Boot] [application](./webapp/src/main) using [Apache Maven]
    This includes running [unit tests](./webapp/src/test//java).
 2. Performs a security scan on the Java code base using [SonarQube] via Maven
-3. Build and register a version Docker image
+3. Build and register a version of the [Docker image](./Dockerfile)
 4. Deploy the image to the `dev` environment
 5. Run the automated browser tests against the application in the `dev` environment.
    The [browser tests](./webapp/src/test/python/helloworld) are written in
@@ -32,7 +32,7 @@ and code review.
 8. Pause for confirmation that the new image can be deployed to the `prod` environment.
    Allow for some manual tests to be executed before 
    This step times out after some (configurable amount of) time.
-9. Deploy the image to the `prod` environment
+9. Deploy the image to the `prod` (or live) environment
 
 Pipeline executions:
    ![Jenkins Pipeline](./doc/images/Jenkins-hello-world-master.png)
@@ -100,7 +100,7 @@ process:
    Smoke tests would always be applied to each environment, including production.
    The full suite of tesst would only be executed against pre-production environments.
 2. Application/browser tests are executed against all targetted brower/platform configurations
-   using a hosted service, such as [Browserstack]
+   using a hosted service, such as [Browserstack] or [Saucelabs].
 3. Add performance testing in the pipeline, e.g. using [Taurus] and/or [Apache jMeter].
 4. Penetration tests are executed as part of the pipeline,e.g. using OWAPS' [ZAProxy]
 5. Integrate a notification mechanism with the pipeline, e.g. [Slack](./doc/slack-integration.md)
@@ -126,3 +126,4 @@ process:
 [Apache Maven]: https://maven.apache.org/
 [SonarQube]: https://www.sonarqube.org/
 [GitHub-Jira Integration]: https://confluence.atlassian.com/adminjiracloud/connect-jira-cloud-to-github-814188429.html
+[Saucelabs]: https://saucelabs.com/

@@ -24,25 +24,25 @@ pipeline {
         }
         stage("Build and Register Image") {
             agent any
-            steps { buildAndRegisterDockerImage()  }
+            steps { buildAndRegisterDockerImage() }
         }
         stage("Deploy Image to Dev") {
             agent any
-            steps { deployImage(env.ENVIRONMENT)  }
+            steps { deployImage(env.ENVIRONMENT) }
         }
         stage("Test App in Dev") {
             agent any
-            steps { runBrowserTest(env.ENVIRONMENT)  }
+            steps { runBrowserTest(env.ENVIRONMENT) }
         }
         stage("Deploy Image to Test") {
             agent any
             when { branch 'master' } 
-            steps { deployImage('test')  }
+            steps { deployImage('test') }
         }
         stage("Test App in Test") {
             agent any
             when { branch 'master' } 
-            steps { runBrowserTest('test')  }
+            steps { runBrowserTest('test') }
         }
         stage("Proceed to prod?") {
             agent none
@@ -51,8 +51,8 @@ pipeline {
         }
         stage("Deploy Image to Prod") {
             agent any
-            when { expression { (env.BRANCH_NAME == 'master') && (env.PROCEED_TO_PROD == 'yes' ) } }
-            steps { deployImage('prod')  }
+            when { branch 'master' }
+            steps { deployImage('prod') }
         }
     }
 }
@@ -217,11 +217,14 @@ def runBrowserTest(environment) {
 def proceedTo(environment) {
     def description = "Choose 'yes' if you want to deploy to this build to " + 
         "the ${environment} environment"
-    def proceedVariable =  + environment.toUpperCase()
+    def proceed = 'no'
     timeout(time: 4, unit: 'HOURS') {
-        env[proceedVariable] = input message: "Do you want to deploy the changes to ${environment}?",
+        def proceed = input message: "Do you want to deploy the changes to ${environment}?",
             parameters: [choice(name: "Deploy to ${environment}", choices: "no\nyes",
                 description: description)]
+        if (proceed == 'no') {
+            error("User stopped pipeline execution")
+        }
     }
 }
 
