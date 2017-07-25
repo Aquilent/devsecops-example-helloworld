@@ -155,12 +155,13 @@ Repeat these steps passing `dev`, `test`, and `prod` as the parameter values for
    - `SecurityContext`. Match the value of `Environment`.
    
    To verify that application instance is install, browse to
-   `http://<PublicIP output value of Stack>`.
-   Initially the provisioing scripts setup a web application using the 
+      `http://<PublicIP output value of Stack>`.
+   Initially the provisioning scripts sets up a web application using the 
    [kitematic/hello-world-nginx](https://hub.docker.com/r/kitematic/hello-world-nginx/)
    docker image.
    Once the [pipeline](../Jenkinsfile) is executed this application will be automatically
-   replaced with the actual [hello world](../webapp/sc/main) application.
+   replaced with the actual [hello world](../webapp/sc/main) application using the
+   [Docker image[../Dockerfile)]
 
 Once completed you should something similar to the following in your AWS Cloud Formation console:
 

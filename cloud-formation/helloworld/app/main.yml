@@ -308,7 +308,7 @@ Resources:
         helloworld:
           files:
             /opt/dso/deploy-app:
-              source: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/deploy-app.sh"
+              source: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/helloworld-app/deploy-app.sh"
               group: "root"
               owner: "root"
               mode: "000700"

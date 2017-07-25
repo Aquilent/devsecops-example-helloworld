@@ -7,14 +7,16 @@ The code for this pipeline can be found [here](./Jenkinsfile).
 
 ## Steps
 
-1. Build the (Java Springboot application using Maven.
-   This includes runnuing unit tests.
-2. Performs a security scan using SonarQube via Maven
+1. Build the Java [Spring Boot] [application](./webapp/src/main) using [Apache Maven]
+   This includes running [unit tests](./webapp/src/test//java).
+2. Performs a security scan on the Java code base using [SonarQube] via Maven
 3. Build and register a version Docker image
 4. Deploy the image to the `dev` environment
-5. Run automated browser tests against the application in the `dev` environment
+5. Run the automated browser tests against the application in the `dev` environment.
+   The [browser tests](./webapp/src/test/python/helloworld) are written in
+   [Python](./webapp/src/test/python) using the [Python Selenium Webdriver API binding].
 6. Deploy the image to the `test` environment
-7. Run automated browser tests against the application in the `test` environment
+7. Run the automated browser tests against the application in the `test` environment
 8. Pause for confirmation that the new image can be deployed to the `prod` environment.
    Allow for some manual tests to be executed before 
    This step times out after some (configurable amount of) time.
@@ -26,8 +28,8 @@ The following is an example of this pipeline as run inside of Jenkins:
 Example of the pause step:
    ![Pause Pipeline](./doc/images/Jenkins-hello-world-master-pause.png)
 
-Jenkins multi-branch pipelines build all your repository branches in the source code control 
-system automatically (e.g. github), although you can explicitly include/exclude branch using
+Jenkins multi-branch pipelines build all your branches in your repository under source code
+control (e.g. github) automatically. NOte that you can explicitly include/exclude branch using
 regular expressions.
 This allows for a development approach with short-lived feature and bugfix 
 branches that can be build, deployed, and tested simultaneously.
@@ -46,12 +48,18 @@ These temporary additional `dev` environments can quickly be created using the a
 setting the `Environment` parameter to `dev-<feature>` and the `SecurityContext` parameter to `dev`.
 The new `dev-<feature>` environment now operates in the same security context as the `dev`
 environment`.
+The advantage is that these temporary environments allow for a 'clean' start of development and 
+testing.
+
+Now when a new temporary development branch is created of the master branch,
+the Jenkins pipeline will discover the new branch and execute the pipeline code from 
+that spefific branch.
 
 
 
 ## Development Process
 
-The development process consists of the following steps:
+The (typical) development process consists of the following steps:
 1.  A User Story (or Bug) ticket is assigned to a developer
 2.  Create a temporary and short-lived development (feature/bugfix) branch environment
     using the Hello World application
@@ -77,7 +85,6 @@ The development process consists of the following steps:
 16. Manual tests (if any are executed against the Test environment
 17. If problems are detected, return to step 3
 18. Accept changes and push to production
-
 
 
 ## Possible Extensions
@@ -108,3 +115,7 @@ The development process consists of the following steps:
 [Postman]: https://www.getpostman.com/docs/postman/scripts/test_scripts
 [Newman]: https://github.com/postmanlabs/newman
 [Newman Docker image]: https://hub.docker.com/r/postman/newman_ubuntu1404/
+[Spring Boot]: https://projects.spring.io/spring-boot/
+[Python Selenium Webdriver API binding]: http://selenium-python.readthedocs.io/api.html
+[Apache Maven]: https://maven.apache.org/
+[SonarQube]: https://www.sonarqube.org/

@@ -302,7 +302,7 @@ Resources:
         jenkins:
           files:
             /etc/init.d/jenkins:
-              source: !Sub https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/etc-init.d-jenkins.sh
+              source: !Sub https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/jenkins-app/etc-init.d-jenkins.sh
               group: "root"
               owner: "root"
               mode: "000700"
