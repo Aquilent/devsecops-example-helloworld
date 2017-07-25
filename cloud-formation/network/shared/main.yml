@@ -12,6 +12,7 @@ Parameters:
     Default: "shared"
   VPCCIDRBlock: 
     Type: String
+    Default: "172.27.0.0/16"
 Resources:
   VPC:
     Type: AWS::EC2::VPC

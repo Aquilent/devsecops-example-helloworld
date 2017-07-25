@@ -12,6 +12,7 @@ Parameters:
     Default: "shared"
   JenkinsCIDRBlock:
     Type: String
+    Default: "172.27.1.0/24"
 Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup

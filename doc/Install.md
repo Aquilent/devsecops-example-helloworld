@@ -68,9 +68,6 @@ To install the common AWS VPC and IAM resources run the following cloud-formatio
 
 1. Run the cloud-formation script in [network/shared](../cloud-formation/network/shared)
    using the listed [policy](../cloud-formation/network/shared/default-stack-policy.json)
-   Pass a value to parameters:
-   - `CIDRBlock`. CIDR block for the VPC, e.g. `172.27.0.0/16`. 
-      The block needs to be large enough to support 4 subnets.
 2. Run the cloud-formation script in [security/shared](../cloud-formation/security/shared)
    using the listed [policy](../cloud-formation/security/shared/default-stack-policy.json)
 
@@ -81,13 +78,9 @@ scripts and subsequently configure Jenkins:
 
 1. Run the cloud-formation script in [network/jenkins](../cloud-formation/network/jenkins)
    using the listed [policy](../cloud-formation/network/jenkins/default-stack-policy.json)
-   Pass a value for parameters:
-   - `JenkinsCIDRBlock`. This CIDR Block must fall within the VPC `CIDRBlock`
-     (see common AWS Resources), e.g. `172.27.1.0/24`.
 2. Run the cloud-formation script in [security/jenkins](../cloud-formation/security/jenkins)
    using the listed [policy](../cloud-formation/security/jenkins/default-stack-policy.json)
    Pass a value for parameters:
-   - `VPCCIDRBlock` that matches the earlier value  (see common AWS Resources).
    - `PrivilegedCIDRx` (for x=1..5) to enable access to resources on the private Jenkins subnet.
       At least one privileged address is needed to be able to obtain the initial Jenkins
       administrator password.
@@ -99,9 +92,9 @@ scripts and subsequently configure Jenkins:
    [SonarQube]() inside.
    [Docker](https://hub.docker.com/_/sonarqube/)
    Pass a value to parameters:
-   - `ProvisioningBucket`. The name ofn AWS S3 Bucket you created in the prerequisites.
+   - `ProvisioningBucket` The name ofn AWS S3 Bucket you created in the prerequisites.
      Create the forementioned 'folder' structure in ths S3 bucket using
-     `<your bucket>/cloud-formation/<system, default:DSO>/shared/jenkins-app` and
+     `<your bucket>/cloud-formation/<system>/shared/jenkins-app` and
      upload file `etc-init-d-jenkins.sh` into this 'folder'
      
      ![S3 Example](./images/S3-Provisioning-Bucket-Structure.png)
@@ -144,22 +137,21 @@ Repeat these steps passing `dev`, `test`, and `prod` as the parameter values for
 1. Run the cloud-formation stack in [network/hello-world](../cloud-formation/network/helloworld)
    using the listed [policy](../cloud-formation/network/helloworld/default-stack-policy.json)
    Pass a value for parameter:
-   -  `Environment`. Either `dev`, `test`, or `prod`
-   - `ApplicationCIDRBlock`. This CIDR Block must fall within the VPC `CIDRBlock` 
-     (see common AWS Resources),
+   - `Environment`. Either `dev`, `test`, or `prod`
+   - `ApplicationCIDRBlock`. This CIDR Block must fall within the VPC `CIDRBlock`,
      e.g. `172.27.x.0/24` (where x is 10 for `dev`, 20 for `test` and 30 for `prod`).
 2. Run the cloud-formation stack in [security/hello-world](../cloud-formation/security/helloworld/main.yml)
    using the listed [policy](../cloud-formation/security/helloworld/default-stack-policy.json)
    Pass a value for parameter:
    - `Environment`. Either `dev`, `test`, or `prod`
    - `VPCCIDRBlock` that matches the earlier value (see common AWS Resources).
-   - `PrivilegedCIDRx` (for x=1,2,3,4, or 5) to enable access to resources on the private 
+   - `PrivilegedCIDRx` (for x=1..5) to enable access to resources on the private 
       Jenkins subnet. At least one privileged address is needed to be able to obtain the 
       initial Jenkins administrator password.
 3. Run the cloud-formation stack in [helloworld/app](../cloud-formation/helloworld/app/main.yml)
    using the listed [policy](../cloud-formation/helloworld/app/default-stack-policy.json)
    Pass a value for parameter:
-   - `Environment`. Either `dev`, `test`, or `prod`
+   - `Environment`. Either `dev`, `test`, or `prod`.
    - `SecurityContext`. Match the value of `Environment`.
    
    To verify that application instance is install, browse to

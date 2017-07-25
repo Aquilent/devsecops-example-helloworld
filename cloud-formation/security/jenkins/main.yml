@@ -22,6 +22,7 @@ Parameters:
     Default: "cloud-formation"
   VPCCIDRBlock: 
     Type: String
+    Default: "172.27.0.0/16"
   PrivilegedCIDR1:
     Type: String
     Default: ""
