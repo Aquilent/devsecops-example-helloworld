@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Description: Shared network infrastructure for the DevSecOps example
+Parameters: 
+  System: 
+    Type: String
+    Default: "XXX"
+  Region: 
+    Type: String
+    Default: "us-east-1"
+  VPCCIDRBlock: 
+    Type: String
+    Default: "172.27.0.0/16"
+  ProvisioningBucket:
+    Type: String
+  ProvisioningBucketPath:
+    Type: String
+    Default: "cloud-formation"
+Resources:
+  SharedNetwork:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        System: !Ref System
+        Region: !Ref Region
+        Environment: shared
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+      TemplateURL: !Sub "s3://${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/shared/network/main.yml"
+  SharedSecurity:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        System: !Ref System
+        Region: !Ref Region
+        Environment: shared
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+      TemplateURL: !Sub "s3://${ProvisioningBucket}/${ProvisioningBucketPath}/shared/security/main.yml"
