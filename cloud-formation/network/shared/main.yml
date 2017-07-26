@@ -3,7 +3,7 @@ Description: Shared network infrastructure for the DevSecOps example
 Parameters: 
   System: 
     Type: String
-    Default: "DSO"
+    Default: "dso"
   Region: 
     Type: String
     Default: "us-east-1"

@@ -3,7 +3,7 @@ Description: Hello World application network infrastructure for the DevSecOps ex
 Parameters: 
   System: 
     Type: String
-    Default: "DSO"
+    Default: "dso"
   Region: 
     Type: String
     Default: "us-east-1"
@@ -335,7 +335,7 @@ Resources:
     Type: "AWS::ECR::Repository"
     DeletionPolicy: Delete
     Properties: 
-      RepositoryName: "hello-world"
+      RepositoryName: !Sub "${System}-hello-world"
 Outputs:
   PublicIp:
     Value: !GetAtt Instance.PublicIp

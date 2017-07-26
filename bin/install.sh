@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-SYSTEM="XXX"
+SYSTEM="DSO"
 BUCKET_NAME="com-bah-sig-solutions-xxx"
-FULL_STACK_NAME="${SYSTEM}"
 
 SCRIPT_DIR=$(dirname $0)
 
@@ -12,7 +11,6 @@ function get_parent {
 
 }
 PROJECT_HOME=$(get_parent $SCRIPT_DIR)
-TARGET_DIR="${PROJECT_HOME}/target"
 
 
 
@@ -162,8 +160,127 @@ function trace {
     fi
 }
 
+
 # =============================================================================
-#  AWS core functions
+#  UTILITY functions
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+#  Echos the standard input
+# -----------------------------------------------------------------------------
+function echo_stdin {
+    local trim="$1"
+    if [ "${trim}" != "" ]; then
+        while read line ; do echo -e $line ; done
+    else
+        cat
+    fi
+}
+
+# -----------------------------------------------------------------------------
+#  Combines all arguments (but the first) into a single string using the first
+#  argument as separator
+# -----------------------------------------------------------------------------
+function join_by { 
+    local separator="$1" joined="" index=1 e=""
+    shift
+    for e in $*; do
+        if [ "${index}" -gt 1 ]; then
+            joined="${joined}${separator}"
+        fi
+        joined="${joined}${e}"
+        ((++index))
+    done
+    echo -e "${joined}"
+}
+
+# -----------------------------------------------------------------------------
+#  Combines all lines on standard input into a single string separated by a 
+#  space
+# -----------------------------------------------------------------------------
+function combine_lines {
+    sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g'
+}
+
+# -----------------------------------------------------------------------------
+#  Returns the given argument converted to upper case
+# -----------------------------------------------------------------------------
+function toupper {
+    echo -e "$1" | awk '{print toupper($0);}'
+}
+
+# -----------------------------------------------------------------------------
+#  Returns the given argument converted to lower case
+# -----------------------------------------------------------------------------
+function tolower {
+    echo -e "$1" | awk '{print tolower($0);}'
+}
+
+# -----------------------------------------------------------------------------
+# Filters stdin removing spaces from the end (of each line)
+# -----------------------------------------------------------------------------
+function trim_trail {
+    local value=`sed -e 's/[[:space:]]*$//'`
+    trace "trim_trail($1)=${value}"
+    echo -e "${value}"
+}
+
+# -----------------------------------------------------------------------------
+# Filters stdin removing spaces from the beginning (of each line)
+# -----------------------------------------------------------------------------
+function trim_lead {
+    local value=`sed -e 's/^[[:space:]]*//'`
+    trace "trim_lead($1)=${value}"
+    echo -e "${value}"
+}
+
+# -----------------------------------------------------------------------------
+# Filters stdin removing spaces from the beginning and end (of each line)
+# -----------------------------------------------------------------------------
+function trim {
+    local value=`trim_trail | trim_lead`
+    trace "trim($1)=${value}"
+    echo -e "${value}"
+}
+
+function remove_empty_lines {
+    sed '/^\s*$/d'
+}
+
+# -----------------------------------------------------------------------------
+#  Reverses lines on the standard input
+# -----------------------------------------------------------------------------
+function reverse {
+    tac
+}
+
+function get_last_line {
+    tail -1
+}
+
+function get_first_line {
+    head -1
+}
+
+# -----------------------------------------------------------------------------
+#  Converts files  from dos to unix format  (if needed).
+#  Uses all arguments as names of files to convert
+# -----------------------------------------------------------------------------
+function convert_dos2unix {
+    yum -y install dos2unix
+    for file in $*;  do
+        log "Convert ${file} from DOS to Unix"
+        dos2unix --quiet "${file}" --keepdate
+    done
+}
+
+function utf8_to_ascii {
+    iconv -f utf-8 -t ascii//translit
+}
+
+
+# =============================================================================
+#  AWS  functions
 # =============================================================================
 
 function get_aws_profile {
@@ -257,8 +374,10 @@ function s3_bucket_exists {
 
 function create_s3_bucket {
     local name="$1"
+    local output=""
     verbose "Create bucket ${name}"
-    s3api create-bucket --bucket "${name}"
+    output=$(s3api create-bucket --bucket "${name}")
+    extra_verbose "Created ${ouput}"
 }
 
 # Grantee is a group name: AuthenticatedUsers, AllUsers, Owner
@@ -644,10 +763,11 @@ function build_bucket_dir {
 }
 
 function build_bucket {
+    writeln "Preparing bucket contents"
     build_bucket_dir "network/shared" "shared/network"
     build_bucket_dir "security/shared" "shared/security"
-    build_bucket_dir "security/jenkins" "shared/jenkins-network"
-    build_bucket_dir "security/jenkins" "shared/jenkins-network"
+    build_bucket_dir "network/jenkins" "shared/jenkins-network"
+    build_bucket_dir "security/jenkins" "shared/jenkins-security"
     build_bucket_dir "jenkins/app" "shared/jenkins-app"
 
     for e in dev test prod; do
@@ -666,13 +786,15 @@ function create_stack_bucket {
     local grantees="AuthenticatedUsers"
     local permissions="read write read-acp write-acp"
     if ! $(s3_bucket_exists "${BUCKET_NAME}"); then
+        writeln "Creating bucket ${BUCKET_NAME}"
         create_s3_bucket "${BUCKET_NAME}" || return 1
-        set_s3_bucket_acl "${BUCKET_NAME}" "${grantees}" "${permissions}" | return 2
+        #set_s3_bucket_acl "${BUCKET_NAME}" "${grantees}" "${permissions}" | return 2
     fi
 }
 
 function sync_stack_bucket {
     create_stack_bucket
+    writeln "Sync bucket contents to bucket ${BUCKET_NAME}"
     s3 sync "${TARGET_DIR}/${STACK_PATH}/" "s3://${BUCKET_NAME}/${STACK_PATH}"  || return 1
 }
 
@@ -711,6 +833,7 @@ function create_stack {
     if [ "${WAIT_FOR_COMPLETION}" != "" ]; then
         wait_args="--wait-for-completion ${WAIT_FOR_COMPLETION}"
     fi
+    writeln "About to create stack ${FULL_STACK_NAME}"
     apply_cf_stack --stack "${FULL_STACK_NAME}"\
         --bucket "${BUCKET_NAME}" \
         --template "cloud-formation/${SYSTEM}/main.yml" \
@@ -741,18 +864,35 @@ function delete_stack {
 }
 
 
-if [ -d "${TARGET_DIR}" ]; then
-    rm -rf "${TARGET_DIR}"
-fi
-mkdir -p "${TARGET_DIR}"
+function initialize {
+    while test $# -gt 0; do
+        case $1 in
+          -b|--bucket)              shift; BUCKET_NAME="$1" ;;
+          -s|--system)              shift; SYSTEM="$1" ;;
+          -p|--profile)             shift; export AWS_DEFAULT_PROFILE="$1" ;;
+          -v)                       set_verbose ;;
+          *)                        error "Unexpected argument $1"; return 1
+        esac
+        shift
+    done
 
-STACK_PARAMETERS="System=${SYSTEM} ProvisioningBucket=${BUCKET_NAME}"
-WAIT_FOR_COMPLETION="30"
-OUTPUT_FILE="${TARGET_DIR}/${SYSTEM}-output.properties"
+    if [ "${BUCKET_NAME}" == "" ]; then
+        error "No bucket name provided."
+        error "Please provide one by adding '--bucket your-bucket-name'"
+        return 2
+    fi
+    FULL_STACK_NAME="${SYSTEM}"
+    TARGET_DIR="${PROJECT_HOME}/target"
+    STACK_PARAMETERS="System=${SYSTEM} ProvisioningBucket=${BUCKET_NAME}"
+    WAIT_FOR_COMPLETION="30"
+    OUTPUT_FILE="${TARGET_DIR}/${SYSTEM}-output.properties"
 
-set_verbose
-#set_verbose
-build_bucket
-sync_stack_bucket
-create_stack
+    if [ -d "${TARGET_DIR}" ]; then
+        rm -rf "${TARGET_DIR}"
+    fi
+    mkdir -p "${TARGET_DIR}"
+}
+
+initialize "$@" && build_bucket && sync_stack_bucket && create_stack
+
 
