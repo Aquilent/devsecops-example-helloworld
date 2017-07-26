@@ -58,8 +58,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR1
   SSHAccessIngress2:
     Type: AWS::EC2::SecurityGroupIngress
@@ -68,8 +68,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR2
   SSHAccessIngress3:
     Type: AWS::EC2::SecurityGroupIngress
@@ -78,8 +78,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR3
   SSHAccessIngress4:
     Type: AWS::EC2::SecurityGroupIngress
@@ -88,8 +88,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR4
   SSHAccessIngress5:
     Type: AWS::EC2::SecurityGroupIngress
@@ -98,11 +98,11 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR5
 Outputs:
   SecurityGroup:
     Value: !Ref SecurityGroup
     Export: 
-      Name: !Sub "${System}-${Environment}-ssh-securitygroup"
+      Name: !Sub "${System}-${Environment}-priviledged-access"

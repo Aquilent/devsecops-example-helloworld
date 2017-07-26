@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-SYSTEM="DSO"
-BUCKET_NAME="com-bah-sig-solutions-xxx"
-
+SYSTEM="dso"
+BUCKET_NAME="com-bah-sig-solutions-artifacts"
+export AWS_DEFAULT_PROFILE="solutions"
 SCRIPT_DIR=$(dirname $0)
+
 
 function get_parent {
     local script_dir=$(dirname $1)
@@ -12,7 +13,30 @@ function get_parent {
 }
 PROJECT_HOME=$(get_parent $SCRIPT_DIR)
 
+function usage {
+    cat <<EOH
+Usage: $0 OPTIONS
 
+OPTIONS:
+   -b BUCKET_NAME              The name of the bucket that wil be used fro provisioning
+   --bucket BUCKET_NAME        The scripts will create a folder named 'cloud-formation' 
+                               in this bucket.
+                               Default: com-bah-sig-solutions-artifacts
+
+   -s SYSTEM_NAME,             The name of the system (will be used to tag resources).
+   --system SYSTEM_NAME        Default: dso
+
+   -p PROFILE_NAME             The name of the AWS-CLI to use. Alternatively specify
+   --profile PROFILE_NAME      by using "export AWS_DEFAULT_PROFILE=<PROFILE_NAME>"
+        
+   --cidr CIDR                 Allow all access to EC2-instance from this CIDR BLOCK, 
+                               e.g. 128.229.0.0/16 
+
+   -v,--verbose                Make output more verbose (can be repeated)
+
+   -h,--help                   This help text
+EOH
+}
 
 #------------------------------------------------------------------------------
 # Print an error message consiting of the concatenation of all arguments
@@ -865,25 +889,35 @@ function delete_stack {
 
 
 function initialize {
+    local cidrs=() cidr i="0"
     while test $# -gt 0; do
         case $1 in
           -b|--bucket)              shift; BUCKET_NAME="$1" ;;
           -s|--system)              shift; SYSTEM="$1" ;;
           -p|--profile)             shift; export AWS_DEFAULT_PROFILE="$1" ;;
-          -v)                       set_verbose ;;
-          *)                        error "Unexpected argument $1"; return 1
+          --cidr)                   shift; cidrs+=("$1") ;;
+          -v|--verbose)             set_verbose ;;
+          -h|--help)                usage; return 1 ;;
+          *)                        error "Unexpected argument $1"; return 2 ;;
         esac
         shift
     done
 
-    if [ "${BUCKET_NAME}" == "" ]; then
-        error "No bucket name provided."
-        error "Please provide one by adding '--bucket your-bucket-name'"
-        return 2
-    fi
+    writeln "Using System name '${SYSTEM}'"
+    writeln "Using SysteAWS Bucket '${BUCKET_NAME}' for provisioning"
+
     FULL_STACK_NAME="${SYSTEM}"
     TARGET_DIR="${PROJECT_HOME}/target"
     STACK_PARAMETERS="System=${SYSTEM} ProvisioningBucket=${BUCKET_NAME}"
+    for cidr in $cidrs; do
+        ((i++))
+        writeln "Allowing SSH access from '${cidr}' (PriviligededCIDR${i})"
+        STACK_PARAMETERS="${STACK_PARAMETERS} PrivilegedCIDR${i}=${cidr}"
+    done
+    if [ "${i}" == "0" ]; then
+        warning "You did not specify any priviledged CIDR blocks." \
+            "You will not be able to access the EC2 instances over SSH."
+    fi
     WAIT_FOR_COMPLETION="30"
     OUTPUT_FILE="${TARGET_DIR}/${SYSTEM}-output.properties"
 
@@ -891,8 +925,11 @@ function initialize {
         rm -rf "${TARGET_DIR}"
     fi
     mkdir -p "${TARGET_DIR}"
+
+    writeln "Writing output parameters to '${OUTPUT_FILE}'"
 }
 
-initialize "$@" && build_bucket && sync_stack_bucket && create_stack
-
-
+initialize "$@" || exit 1
+build_bucket || exit 2
+sync_stack_bucket || exit 3
+create_stack || exit 4

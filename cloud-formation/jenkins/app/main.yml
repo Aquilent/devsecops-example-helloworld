@@ -29,9 +29,6 @@ Parameters:
     Default: 1200
     Description: >-
       The length of time that wait conditions inside this template wait for a completion signal
-  JenkinsDockerImage:
-    Type: String
-    Default: "jenkins"
 Resources:
   Instance:
     Type: AWS::EC2::Instance
@@ -65,7 +62,7 @@ Resources:
               !Sub "${System}-${Environment}-jenkins-SubnetAZ1"
           GroupSet:
             - Fn::ImportValue:
-                !Sub "${System}-${Environment}-ssh-securitygroup"
+                !Sub "${System}-${Environment}-priviledged-access"
             - Fn::ImportValue:
                 !Sub "${System}-${Environment}-jenkins-SecurityGroup"
       UserData: 
@@ -86,11 +83,14 @@ Resources:
           EPEL_URL="https://dl.fedoraproject.org/pub/epel/epel-release-latest-${!RHEL_VERSION}.noarch.rpm"
 
           function signal {
-              local code="$1" wait_handle="$2" args=()
+              local code="$1" wait_handle="$2" data="$3" args=()
               if [ "$code" == "0" ]; then
                   args+=("--success true")
               else
                   args+=("--exit-code ${!code}")
+              fi
+              if [ "$data" != "" ]; then
+                  args+=("--data ${!data}")
               fi
               if [ "$wait_handle" != "" ]; then
                   args+=("$wait_handle")
@@ -159,10 +159,15 @@ Resources:
           }
 
           function provision {
+              local success data=""
               export PATH="${!PATH}:/opt/aws/bin"
               cfn-init --verbose --stack "$STACK_NAME" --region "$REGION" \
                   --resource "$RESOURCE" --configsets "$CONFIG_SETS"
-              signal $? "${InstanceReadyHandle}" || return 1
+              success=$?
+              if [ "$success" == "0" ]; then
+                  data=$(cat /var/jenkins_home/secrets/initialAdminPassword)
+              fi
+              signal $success "${InstanceReadyHandle}" $data || return 1
           }
           install || exit 1
           provision || exit 2
@@ -180,6 +185,7 @@ Resources:
             - "cfn-hup"
             - "docker"
             - "jenkins"
+            - "sonarqube"
         awslogs:
           files:
             /tmp/awslogs-agent-setup.py:
@@ -314,13 +320,24 @@ Resources:
                   mkdir -p ${!JENKINS_HOME}
                   chown -R "${!JENKINS_USER}:${!JENKINS_USER}" "${!JENKINS_HOME}"
                   usermod -a -G docker "${!JENKINS_USER}"
-            1-get-docker-image:
-              command: !Sub |
-                  docker pull "${JenkinsDockerImage}"
-            2-setup-service:
-              command: !Sub |
-                  chkconfig jenkins on
-                  service jenkins start
+            1-setup-service:
+              command: "chkconfig jenkins on && service jenkins start"
+            2-ensure-password-file:
+              command:
+                i=30
+                file="/var/jenkins_home/secrets/initialAdminPassword"
+                while [ "$i" -gt "0" ] && [ ! -f $file ]; do (( i-- )); sleep 10; done
+                if [ -f $file ]; then echo "$file found"; else echo "$file not found"; fi
+        sonarqube:
+          files:
+            /etc/init.d/sonarqube:
+              source: !Sub https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/jenkins-app/etc-init.d-sonarqube.sh
+              group: "root"
+              owner: "root"
+              mode: "000700"
+          commands:
+            1-setup-service:
+              command: "chkconfig sonarqube on && service sonarqube start"
   InstanceReadyHandle: 
     Type: "AWS::CloudFormation::WaitConditionHandle"
   InstanceIsReady: 
@@ -341,3 +358,5 @@ Outputs:
     Value: !GetAtt Instance.PublicIp
     Export: 
       Name: !Sub "${System}-${Environment}-jenkins-PublicIp"
+  InitialPassword:
+    Value: !GetAtt InstanceIsReady.Data
