@@ -23,6 +23,13 @@ OPTIONS:
                                in this bucket.
                                Default: com-bah-sig-solutions-artifacts
 
+   --feature FEATURE_NAME      The scripts will ONLY create a feature branch environment
+                               in the dev context named 'dev-FEATURE_NAME'
+                               FEATURE_NAME should match the name of the feature branch
+                               excluding any type prefix, such as 'feature/' or'bugfix/'.
+                               This could sipmply be the number of the ticker 
+                               (e.g. a Jira issue number)
+
    -s SYSTEM_NAME,             The name of the system (will be used to tag resources).
    --system SYSTEM_NAME        Default: dso
 
@@ -617,11 +624,11 @@ function apply_cf_stack {
     writeln "About to ${stack_action} stack ${stack} with url '${template_url}'" \
         " and policy '${policy_url}'"
     trace "stack-paramaters=|${parameters}|"
-    output=`cloudformation ${stack_action}-stack --stack-name "${stack}" \
+    output=$(cloudformation ${stack_action}-stack --stack-name "${stack}" \
         --template-url "${template_url}" ${stack_args} \
         --capabilities "CAPABILITY_NAMED_IAM CAPABILITY_IAM" \
         --stack-policy-url "${policy_url}" --parameters "${parameters}" \
-        --output text 2>&1`
+        --output text 2>&1)
     debug "${stack_action}-stack ${stack} yields [${output}]"
     case $output in
         *No[[:space:]]updates[[:space:]]are[[:space:]]to[[:space:]]be[[:space:]]performed*)
@@ -788,21 +795,25 @@ function build_bucket_dir {
 
 function build_bucket {
     writeln "Preparing bucket contents"
-    build_bucket_dir "network/shared" "shared/network"
-    build_bucket_dir "security/shared" "shared/security"
-    build_bucket_dir "network/jenkins" "shared/jenkins-network"
-    build_bucket_dir "security/jenkins" "shared/jenkins-security"
-    build_bucket_dir "jenkins/app" "shared/jenkins-app"
 
-    for e in dev test prod; do
-        build_bucket_dir "network/helloworld" "${e}/helloworld-network"
-        build_bucket_dir "security/helloworld" "${e}/helloworld-security"
-        build_bucket_dir "helloworld/app" "${e}/helloworld-app"
-    done
-    cp -f "${PROJECT_HOME}/cloud-formation/main.yml" \
-        "${TARGET_DIR}/cloud-formation/${SYSTEM}/main.yml"
-    cp -f "${PROJECT_HOME}/cloud-formation/default-stack-policy.json" \
-        "${TARGET_DIR}/cloud-formation/${SYSTEM}/default-stack-policy.json"
+    if [ "${ENVIRONMENT}" == "" ]; then
+        build_bucket_dir "network/shared" "shared/network"
+        build_bucket_dir "security/shared" "shared/security"
+        build_bucket_dir "network/jenkins" "shared/jenkins-network"
+        build_bucket_dir "security/jenkins" "shared/jenkins-security"
+        build_bucket_dir "jenkins/app" "shared/jenkins-app"
+        for e in dev test prod; do
+            build_bucket_dir "network/helloworld" "${e}/helloworld-network"
+            build_bucket_dir "security/helloworld" "${e}/helloworld-security"
+            build_bucket_dir "helloworld/app" "${e}/helloworld-app"
+        done
+        cp -f "${PROJECT_HOME}/cloud-formation/main.yml" \
+            "${TARGET_DIR}/cloud-formation/${SYSTEM}/main.yml"
+        cp -f "${PROJECT_HOME}/cloud-formation/default-stack-policy.json" \
+            "${TARGET_DIR}/cloud-formation/${SYSTEM}/default-stack-policy.json"
+    else
+        build_bucket_dir "helloworld/app" "${ENVIRONMENT}/helloworld-app"
+    fi
 }
 
 
@@ -860,8 +871,8 @@ function create_stack {
     writeln "About to create stack ${FULL_STACK_NAME}"
     apply_cf_stack --stack "${FULL_STACK_NAME}"\
         --bucket "${BUCKET_NAME}" \
-        --template "cloud-formation/${SYSTEM}/main.yml" \
-        --policy "cloud-formation/${SYSTEM}/default-stack-policy.json" \
+        --template "${STACK_TEMPLATE}" \
+        --policy "${STACK_POLICY}" \
         --parameters "${parameters}" \
         --allow-update \
         $wait_args 1> /dev/null \
@@ -889,10 +900,11 @@ function delete_stack {
 
 
 function initialize {
-    local cidrs=() cidr i="0"
+    local cidrs=() cidr i="0" feature
     while test $# -gt 0; do
         case $1 in
           -b|--bucket)              shift; BUCKET_NAME="$1" ;;
+          --feature)                shift; FEATURE_NAME="$1" ;;
           -s|--system)              shift; SYSTEM="$1" ;;
           -p|--profile)             shift; export AWS_DEFAULT_PROFILE="$1" ;;
           --cidr)                   shift; cidrs+=("$1") ;;
@@ -903,10 +915,13 @@ function initialize {
         shift
     done
 
-    writeln "Using System name '${SYSTEM}'"
-    writeln "Using SysteAWS Bucket '${BUCKET_NAME}' for provisioning"
+    if [ "${FEATURE_NAME}" != "" ]; then
+        writeln "========== Building feature '${FEATURE_NAME}' stack =========="
+    fi
 
-    FULL_STACK_NAME="${SYSTEM}"
+    writeln "Using System name '${SYSTEM}'"
+    writeln "Using S3 Bucket '${BUCKET_NAME}' for provisioning"
+
     TARGET_DIR="${PROJECT_HOME}/target"
     STACK_PARAMETERS="System=${SYSTEM} ProvisioningBucket=${BUCKET_NAME}"
     for cidr in $cidrs; do
@@ -914,7 +929,7 @@ function initialize {
         writeln "Allowing SSH access from '${cidr}' (PriviligededCIDR${i})"
         STACK_PARAMETERS="${STACK_PARAMETERS} PrivilegedCIDR${i}=${cidr}"
     done
-    if [ "${i}" == "0" ]; then
+    if [ "${i}" == "0" ] && [ "${FEATURE_NAME}" == "" ]; then
         warning "You did not specify any priviledged CIDR blocks." \
             "You will not be able to access the EC2 instances over SSH."
     fi
@@ -927,6 +942,22 @@ function initialize {
     mkdir -p "${TARGET_DIR}"
 
     writeln "Writing output parameters to '${OUTPUT_FILE}'"
+
+    if [ "${FEATURE_NAME}" == "" ]; then
+        STACK_TEMPLATE="cloud-formation/${SYSTEM}/main.yml"
+        STACK_POLICY="cloud-formation/${SYSTEM}/default-stack-policy.json"
+        FULL_STACK_NAME="${SYSTEM}"
+    else
+        feature=$(echo "${FEATURE_NAME}" | sed -e 's|^(feature|bugfix)/|g')
+        feature=$(tolower $feature)
+        ENVIRONMENT="dev-${feature}"
+        extra_verbose "Using environment '${ENVIRONMENT}' in SecurityContext 'dev'"
+        STACK_PARAMETERS="${STACK_PARAMETERS} Environment=${ENVIRONMENT}"
+        STACK_PARAMETERS="${STACK_PARAMETERS} SecurityContext=dev"
+        STACK_TEMPLATE="cloud-formation/${SYSTEM}/${ENVIRONMENT}/helloworld-app/main.yml"
+        STACK_POLICY="cloud-formation/${SYSTEM}/${ENVIRONMENT}/helloworld-app/default-stack-policy.json"
+        FULL_STACK_NAME="${SYSTEM}-${ENVIRONMENT}-helloworld-app"
+    fi
 }
 
 initialize "$@" || exit 1
