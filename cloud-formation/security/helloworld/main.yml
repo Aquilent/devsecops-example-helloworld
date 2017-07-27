@@ -399,7 +399,7 @@ Resources:
               - "ecr:BatchGetImage"
               - "ecr:BatchCheckLayerAvailability"
             Resource:
-              - !Sub "arn:aws:ecr:${Region}:${AWS::AccountId}:repository/${ImageName}"
+              - !Sub "arn:aws:ecr:${Region}:${AWS::AccountId}:repository/${System}-${ImageName}"
           - Sid: "AllowLogin"
             Effect: Allow
             Action:
