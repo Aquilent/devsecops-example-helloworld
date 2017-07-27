@@ -312,6 +312,11 @@ Resources:
               group: "root"
               owner: "root"
               mode: "000700"
+            /tmp/ensure-file:
+              source: !Sub https://s3.amazonaws.com/${ProvisioningBucket}/${ProvisioningBucketPath}/${System}/${Environment}/jenkins-app/ensure-file.sh
+              group: "root"
+              owner: "root"
+              mode: "000700"
           commands:
             0-setup-user:
               command: !Sub |
@@ -322,12 +327,8 @@ Resources:
                   usermod -a -G docker "${!JENKINS_USER}"
             1-setup-service:
               command: "chkconfig jenkins on && service jenkins start"
-            2-ensure-password-file:
-              command:
-                i=30
-                file="/var/jenkins_home/secrets/initialAdminPassword"
-                while [ "$i" -gt "0" ] && [ ! -f $file ]; do (( i-- )); sleep 10; done
-                if [ -f $file ]; then echo "$file found"; else echo "$file not found"; fi
+            2-wait-for-password-file:
+              command: "/tmp/ensure-file /var/jenkins_home/secrets/initialAdminPassword"
         sonarqube:
           files:
             /etc/init.d/sonarqube:

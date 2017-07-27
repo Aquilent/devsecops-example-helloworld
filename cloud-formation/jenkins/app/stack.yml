@@ -1,6 +1,6 @@
 stack:
     name: jenkins-app
-    system-name: DSO
+    system-name: dso
     master-template: main.yml
     parameters:
         System: {{env:SYSTEM_NAME}}
@@ -9,3 +9,4 @@ stack:
         ProvisioningBucket: {{env:BUCKET_NAME}}
     initializers:
         - etc-init.d-jenkins.sh  
+        - ensure-file.sh

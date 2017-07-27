@@ -73,11 +73,15 @@ Note that:
 2. Setup [programmatic access](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
 3. Setup an [AWS profile](http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html)
 4. Run [install.sh](../bin/install.sh)  
- 
+
       ```
         bin/install.sh --bucket your-bucket-name --profile your-aws-profile-name
       ```
+
+   Optionally add `--system your-system-name` if not using the default (i.e. `dso`)
 5. Continue with [Jenkins Configuration](#jenkins-configuration)
+
+
 
 ## Manual Installation
 
@@ -158,8 +162,9 @@ scripts and subsequently configure Jenkins:
 4. Continue with [Jenkins Configuration](#jenkins-configuration)
     
 
-## Configure Jenkins and the Hello World Pipeline
-<a id="jenkins-configuration"></a>Once the infrastructure is created Jenkins must be configured
+
+## <a id="jenkins-configuration"></a>Configure Jenkins and the Hello World Pipeline
+Once the infrastructure is created Jenkins must be configured
 using the following steps:
 
 1. Get the initial administrator password:

@@ -75,6 +75,7 @@ function initialize {
           -s|--system)              shift; SYSTEM="$1" ;;
           -v|--version)             shift; VERSION="$1" ;;
           --verbose)                VERBOSE="--verbose" ;;
+          --upload-credentials)     UPLOAD_CREDENTIALS="yes" ;;
           *)                        process_parameter "$1" ;;
         esac
         shift
@@ -121,8 +122,20 @@ function do_ssh {
     ssh -i $KEY "${SSH_USER}@${INSTANCE_IP}" $PASSTRU_ARGS || return 1
 }
 
+function do_scp {
+    set -x
+    scp -i $KEY $PASSTRU_ARGS\
+        "${KEY_PATH}/${SYSTEM}-*-helloworld.pem"\
+        "${SSH_USER}@${INSTANCE_IP}" \
+        || return 1
+}
+
 initialize "$@" || exit 1
 if [ "${INSTANCE_IP}" == "" ]; then
     find_instance || exit 2
 fi
-do_ssh || exit 3
+if [ "${UPLOAD_CREDENTIALS}" == "" ]; then 
+    do_ssh || exit 3
+else
+    do_scp || exit 4
+fi

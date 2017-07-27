@@ -42,7 +42,7 @@ Resources:
         Specifies Privileged (SSH) Access to VPC.
         This security group should be associated with any instance,
         in order to provide centralized privileged access control based on source IPs.
-      GroupName: !Sub "${System}-${Environment}-ssh-access"
+      GroupName: !Sub "${System}-${Environment}-privileged-access"
       VpcId:
         Fn::ImportValue:
           !Sub "${System}-${Environment}-VPC"
@@ -50,7 +50,7 @@ Resources:
         - Key: System
           Value: !Ref System
         - Key: Name
-          Value: !Sub "${System}-${Environment}-ssh-access"
+          Value: !Sub "${System}-${Environment}-privileged-access"
   SSHAccessIngress1:
     Type: AWS::EC2::SecurityGroupIngress
     DeletionPolicy: Delete
