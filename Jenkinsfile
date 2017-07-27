@@ -68,7 +68,7 @@ def initialize() {
     env.REGISTRY_URL = "https://912661153448.dkr.ecr.us-east-1.amazonaws.com"
     env.MAX_ENVIRONMENTNAME_LENGTH = 32
     setEnvironment()
-    env.IMAGE_NAME = "hello-world:" + 
+    env.IMAGE_NAME = "${env.SYSTEM_NAME}-hello-world:" + 
         ((env.BRANCH_NAME == "master") ? "" : "${env.ENVIRONMENT}-") + 
         env.BUILD_ID
     showEnvironmentVariables()

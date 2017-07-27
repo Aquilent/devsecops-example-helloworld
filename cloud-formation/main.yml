@@ -1,0 +1,311 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Description: Shared network infrastructure for the DevSecOps example
+Parameters: 
+  System: 
+    Type: String
+    ConstraintDescription: "[a-z0-9]+"
+  VPCCIDRBlock: 
+    Type: String
+    Default: "172.27.0.0/16"
+  JenkinsCIDRBlock: 
+    Type: String
+    Default: "172.27.1.0/24"
+  ProdApplicationCIDRBlock:
+    Type: String
+    Default: "172.27.10.0/24"
+  TestApplicationCIDRBlock:
+    Type: String
+    Default: "172.27.20.0/24"
+  DevApplicationCIDRBlock:
+    Type: String
+    Default: "172.27.30.0/24"
+  ProvisioningBucket:
+    Type: String
+  ProvisioningBucketPath:
+    Type: String
+    Default: "cloud-formation"
+  PrivilegedCIDR1:
+    Type: String
+    Default: ""
+  PrivilegedCIDR2:
+    Type: String
+    Default: ""
+  PrivilegedCIDR3:
+    Type: String
+    Default: ""
+  PrivilegedCIDR4:
+    Type: String
+    Default: ""
+  PrivilegedCIDR5:
+    Type: String
+    Default: ""
+Resources:
+  #==========================================================================================
+  #  Shared (Common) Stacks
+  #==========================================================================================
+  SharedNetwork:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        System: !Ref System
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-shared-network"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/shared/network/main.yml"
+  SharedSecurity:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+      - SharedNetwork
+    Properties:
+      Parameters:
+        System: !Ref System
+        PrivilegedCIDR1: !Ref PrivilegedCIDR1
+        PrivilegedCIDR2: !Ref PrivilegedCIDR2
+        PrivilegedCIDR3: !Ref PrivilegedCIDR3
+        PrivilegedCIDR4: !Ref PrivilegedCIDR4
+        PrivilegedCIDR5: !Ref PrivilegedCIDR5
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-shared-security"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/shared/security/main.yml"
+
+  #==========================================================================================
+  #   Shared Jenkins Stacks
+  #==========================================================================================
+  JenkinsNetwork:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+       - SharedNetwork
+    Properties:
+      Parameters:
+        System: !Ref System
+        JenkinsCIDRBlock: !Ref JenkinsCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-shared-network-jenkins"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/shared/jenkins-network/main.yml"
+  JenkinsSecurity:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - JenkinsNetwork
+      - SharedSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+        ProvisioningBucket: !Ref ProvisioningBucket
+        PrivilegedCIDR1: !Ref PrivilegedCIDR1
+        PrivilegedCIDR2: !Ref PrivilegedCIDR2
+        PrivilegedCIDR3: !Ref PrivilegedCIDR3
+        PrivilegedCIDR4: !Ref PrivilegedCIDR4
+        PrivilegedCIDR5: !Ref PrivilegedCIDR5
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-shared-secuirityjenkins"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/shared/jenkins-security/main.yml"
+  JenkinsApp:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+      - JenkinsSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        ProvisioningBucket: !Ref ProvisioningBucket
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-shared-security-jenkins"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/shared/jenkins-app/main.yml"
+
+  #==========================================================================================
+  #  Dev Environment Stacks
+  #==========================================================================================
+  DevHelloWorldNetwork:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - SharedNetwork
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: dev
+        ApplicationCIDRBlock: !Ref DevApplicationCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-dev-helloworld-network"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/dev/helloworld-network/main.yml"
+  DevHelloWorldSecurity:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - DevHelloWorldNetwork
+      - SharedSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: dev
+        ProvisioningBucket: !Ref ProvisioningBucket
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+        PrivilegedCIDR1: !Ref PrivilegedCIDR1
+        PrivilegedCIDR2: !Ref PrivilegedCIDR2
+        PrivilegedCIDR3: !Ref PrivilegedCIDR3
+        PrivilegedCIDR4: !Ref PrivilegedCIDR4
+        PrivilegedCIDR5: !Ref PrivilegedCIDR5
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-dev-helloworld-security"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/dev/helloworld-security/main.yml"
+  DevHelloWorldApp:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+      - DevHelloWorldSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: dev
+        SecurityContext: dev
+        ProvisioningBucket: !Ref ProvisioningBucket
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-dev-helloworld-app"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/dev/helloworld-app/main.yml"
+
+  #==========================================================================================
+  #  Test Environment Stacks
+  #==========================================================================================
+  TestHelloWorldNetwork:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - SharedNetwork
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: test
+        ApplicationCIDRBlock: !Ref TestApplicationCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-test-helloworld-network"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/test/helloworld-network/main.yml"
+  TestHelloWorldSecurity:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - TestHelloWorldNetwork
+      - SharedSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: test
+        ProvisioningBucket: !Ref ProvisioningBucket
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+        PrivilegedCIDR1: !Ref PrivilegedCIDR1
+        PrivilegedCIDR2: !Ref PrivilegedCIDR2
+        PrivilegedCIDR3: !Ref PrivilegedCIDR3
+        PrivilegedCIDR4: !Ref PrivilegedCIDR4
+        PrivilegedCIDR5: !Ref PrivilegedCIDR5
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-test-helloworld-security"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/test/helloworld-security/main.yml"
+  TestHelloWorldApp:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+      - TestHelloWorldSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: test
+        SecurityContext: test
+        ProvisioningBucket: !Ref ProvisioningBucket
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-test-helloworld-app"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/test/helloworld-app/main.yml"
+
+  #==========================================================================================
+  #  Prod Environment Stacks
+  #==========================================================================================
+  ProdHelloWorldNetwork:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - SharedNetwork
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: prod
+        ApplicationCIDRBlock: !Ref ProdApplicationCIDRBlock
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-prod-helloworld-network"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/prod/helloworld-network/main.yml"
+  ProdHelloWorldSecurity:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - ProdHelloWorldNetwork
+      - SharedSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: prod
+        ProvisioningBucket: !Ref ProvisioningBucket
+        VPCCIDRBlock: !Ref VPCCIDRBlock
+        PrivilegedCIDR1: !Ref PrivilegedCIDR1
+        PrivilegedCIDR2: !Ref PrivilegedCIDR2
+        PrivilegedCIDR3: !Ref PrivilegedCIDR3
+        PrivilegedCIDR4: !Ref PrivilegedCIDR4
+        PrivilegedCIDR5: !Ref PrivilegedCIDR5
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-prod-helloworld-security"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/prod/helloworld-security/main.yml"
+  ProdHelloWorldApp:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+      - ProdHelloWorldSecurity
+    Properties:
+      Parameters:
+        System: !Ref System
+        Environment: prod
+        SecurityContext: prod
+        ProvisioningBucket: !Ref ProvisioningBucket
+      Tags:
+        - Key: System
+          Value: !Ref System
+        - Key: Name
+          Value: !Sub "${System}-prod-helloworld-app"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ProvisioningBucket}/cloud-formation/${System}/prod/helloworld-app/main.yml"
+
+Outputs:
+  JenkinsIp:
+    Value: !GetAtt JenkinsApp.Outputs.PublicIp
+  JenkinsInitialPassword:
+    Value: !GetAtt JenkinsApp.Outputs.InitialPassword
+  DevHelloWorldIp:
+    Value: !GetAtt DevHelloWorldApp.Outputs.PublicIp
+  TestHelloWorldIp:
+    Value: !GetAtt TestHelloWorldApp.Outputs.PublicIp
+  ProdHelloWorldIp:
+    Value: !GetAtt ProdHelloWorldApp.Outputs.PublicIp

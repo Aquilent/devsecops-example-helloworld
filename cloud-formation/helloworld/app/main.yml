@@ -3,7 +3,7 @@ Description: Hello World application network infrastructure for the DevSecOps ex
 Parameters: 
   System: 
     Type: String
-    Default: "DSO"
+    Default: "dso"
   Region: 
     Type: String
     Default: "us-east-1"
@@ -66,7 +66,7 @@ Resources:
               !Sub "${System}-${SecurityContext}-helloworld-SubnetAZ1"
           GroupSet:
             - Fn::ImportValue:
-                !Sub "${System}-${SharedEnvironment}-ssh-securitygroup"
+                !Sub "${System}-${SharedEnvironment}-priviledged-access"
             - Fn::ImportValue:
                 !Sub "${System}-${SecurityContext}-helloworld-SecurityGroup"
       UserData: 

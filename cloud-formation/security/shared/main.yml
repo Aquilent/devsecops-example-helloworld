@@ -42,7 +42,7 @@ Resources:
         Specifies Privileged (SSH) Access to VPC.
         This security group should be associated with any instance,
         in order to provide centralized privileged access control based on source IPs.
-      GroupName: !Sub "${System}-${Environment}-ssh-access"
+      GroupName: !Sub "${System}-${Environment}-privileged-access"
       VpcId:
         Fn::ImportValue:
           !Sub "${System}-${Environment}-VPC"
@@ -50,7 +50,7 @@ Resources:
         - Key: System
           Value: !Ref System
         - Key: Name
-          Value: !Sub "${System}-${Environment}-ssh-access"
+          Value: !Sub "${System}-${Environment}-privileged-access"
   SSHAccessIngress1:
     Type: AWS::EC2::SecurityGroupIngress
     DeletionPolicy: Delete
@@ -58,8 +58,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR1
   SSHAccessIngress2:
     Type: AWS::EC2::SecurityGroupIngress
@@ -68,8 +68,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR2
   SSHAccessIngress3:
     Type: AWS::EC2::SecurityGroupIngress
@@ -78,8 +78,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR3
   SSHAccessIngress4:
     Type: AWS::EC2::SecurityGroupIngress
@@ -88,8 +88,8 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR4
   SSHAccessIngress5:
     Type: AWS::EC2::SecurityGroupIngress
@@ -98,11 +98,11 @@ Resources:
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
+      FromPort: 0
+      ToPort: 65535
       CidrIp: !Ref PrivilegedCIDR5
 Outputs:
   SecurityGroup:
     Value: !Ref SecurityGroup
     Export: 
-      Name: !Sub "${System}-${Environment}-ssh-securitygroup"
+      Name: !Sub "${System}-${Environment}-priviledged-access"

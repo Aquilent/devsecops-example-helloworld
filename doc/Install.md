@@ -32,8 +32,9 @@ The expected 'directory' structure is as follows:
 ```
 
 One of the advantage of taking this structured approach (common parameters, S3 structuring) is
-that not only the application pipeline can be fully automated, the infractructure can easily 
-be automated using a development pipeline as well.
+that not only the application pipeline can be fully automated, the infrastructure can easily 
+be automated using a development pipeline as well, building on the 
+[Automated Installation](#automated-installation) script.
 
 
 ## Prerequisites:
@@ -56,14 +57,35 @@ Note that:
   passed to it, internally builds the key pair name from the `System` and `Environment`
   parameters. The advantage is that this enforces a consistent naming sructure and 
   eliminates the need for passing the key pair names.
-- The default values for <system> is `DSO` (default for cloud-formation parameters),
-  so when you plan to use the default create a key pairs using DSO for <system>, 
-  e.g. `DSO-shared-jenkins`.
+- The default values for <system> is `dso` (default for cloud-formation parameters),
+  so when you plan to use the default create a key pairs using dso for <system>, 
+  e.g. `dso-shared-jenkins`.
 
   ![EC2 Key Pairs Example](./images/ec2-key-pairs.png)
 
 
-## Install common AWS Resources:
+# Steps
+
+## Automated installation
+<a id="automated-installation"></a>
+
+1. Install the [AWS-CLI](http://docs.aws.amazon.com/cli/latest/userguide/installing.html)
+2. Setup [programmatic access](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)
+3. Setup an [AWS profile](http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html)
+4. Run [install.sh](../bin/install.sh)  
+
+      ```
+        bin/install.sh --bucket your-bucket-name --profile your-aws-profile-name
+      ```
+
+   Optionally add `--system your-system-name` if not using the default (i.e. `dso`)
+5. Continue with [Jenkins Configuration](#jenkins-configuration)
+
+
+
+## Manual Installation
+
+### Install common AWS Resources:
 To install the common AWS VPC and IAM resources run the following cloud-formation scripts:
 
 1. Run the cloud-formation script in [network/shared](../cloud-formation/network/shared)
@@ -72,7 +94,7 @@ To install the common AWS VPC and IAM resources run the following cloud-formatio
    using the listed [policy](../cloud-formation/security/shared/default-stack-policy.json)
 
 
-## Install the helloworld application on EC2 instances for a dev, test, and prod environment:
+### Install the helloworld application on EC2 instances for a dev, test, and prod environment:
 
 Repeat these steps passing `dev`, `test`, and `prod` as the parameter values for the 
 `Environment` parameter in the various stacks:
@@ -110,7 +132,7 @@ Once completed you should something similar to the following in your AWS Cloud F
 
 ![Cloud Formation stack](./images/HelloWorld-CloudFormation-Stacks.png)
 
-## Install Jenkins on EC2 instance:
+### Install Jenkins on EC2 instance:
 To install the the AWS resources for the Jenkins instance run the following cloud-formation
 scripts and subsequently configure Jenkins:
 
@@ -137,35 +159,40 @@ scripts and subsequently configure Jenkins:
      
      ![S3 Example](./images/S3-Provisioning-Bucket-Structure.png)
 
+4. Continue with [Jenkins Configuration](#jenkins-configuration)
+    
 
-4. Configure Jenkins:
 
-   a. Get the initial administrator password:
+## <a id="jenkins-configuration"></a>Configure Jenkins and the Hello World Pipeline
+Once the infrastructure is created Jenkins must be configured
+using the following steps:
+
+1. Get the initial administrator password:
       - Login to the Jenkins EC2 instance with the jenkins key 
-        `ssh -i DSO-shared-jenkins <jenkins-public-ip>`
+        `ssh -i dso-shared-jenkins <jenkins-public-ip>`
       - Get the key from `/var/jenkins_home/secrets/initialAdminPassword`
 
-   b. Browse to Jenkins at `http://<jenkins-public-ip>` and use the initial password to login
+2. Browse to Jenkins at `http://<jenkins-public-ip>` and use the initial password to login
    
-   c. Choose to install the default plugins
+3. Choose to install the default plugins
    
-   d. Next install the SSH and SSH Agent plugins under `Manage Jenkins > Manage Plugins`
+4. Next install the SSH and SSH Agent plugins under `Manage Jenkins > Manage Plugins`
    
-   e. Create the following credentials under `Credentials > global`
+5. Create the following credentials under `Credentials > global`
       - (Optional, if repo is private) A valid Git credential (ID: `*any*`)
       - An SSH Username with private key for the hello-world dev app instance 
-        (ID: `DSO-dev-helloworld`, Username: `ec2-user`) using the private key from 
+        (ID: `dso-dev-helloworld`, Username: `ec2-user`) using the private key from 
         the matching EC2 Keypair
       - An SSH Username with private key for the hello-world test app instance 
-        (ID: `DSO-test-helloworld`, Username: `ec2-user`) using the private key from 
+        (ID: `dso-test-helloworld`, Username: `ec2-user`) using the private key from 
         the matching EC2 Keypair
       - An SSH Username with private key for the hello-world prod app instance 
-        (ID: `DSO-prod-helloworld`, Username: `ec2-user`) using the private key from 
+        (ID: `dso-prod-helloworld`, Username: `ec2-user`) using the private key from 
         the matching EC2 Keypair
 
     f. Add users as appropriate under `Manage Jenkins > Manage Users`
 
-5. Setup the multi-pipeline job for the Hello World Application 
+6. Setup the multi-pipeline job for the Hello World Application 
  
     a. Create the job using `New Item` with item name `hello-world-app` and 
        the `Multibranch pipeline` option
@@ -180,7 +207,6 @@ scripts and subsequently configure Jenkins:
     repository, and once it discovers the Jenkinsfile, start to build all branches found.
     If you have multiple branches and want to limit building to the `master` branch you can
     add a `Filter by Name` Behavior before selecting `Save`
-
 
 
 
