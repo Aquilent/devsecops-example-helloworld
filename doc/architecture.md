@@ -54,17 +54,19 @@ This DevSecOps example uses the following architecture:
   The Jenkins pipeline uses the fact that it runs inside the same environment
   using the assigned IAM Role to. This may not work in other setups where Jenkins is 
   hosted outside the environment.
-  The pipeline does the following to 'exploit' this situation:
-    * Connect to the ECR registry 
-    * Discover internal server IP addresses in order to connect using SSH,
-      including to connect to SonarQube from the Pipeline 
-      (Connecting to localhost:9000 does not work as SonarQube runs inside a Docker container,
-      thus localhost is routed to that container, rather than the docker host)
-    * EC2 instances are discovered (rather than configured).
-      This is more flexible, as it does not require updates to the pipeline, if the
-      AWS resources are replaced
-    * SSH connections to environment servers are made use Credentials IDs.
-      The credentials IDs are discovered based on the name and the targe environment.
+  The pipeline does the following to 'exploit' this situation using permission assigned to a 
+  Role assigned to the Jenkins EC2 instance:
+    * Connect to the ECR Registry to push or pull the Hello World Docker image.
+    * Discover internal server IP addresses, rather than configure. This is more flexible, 
+      as it does not require updates to the pipeline, if the AWS resources are replaced.
+      These IP addresses may be used to test the web application (connect using HTTP on port 80),
+      update the docker images via SSH, or connect to SonarQube from the Pipeline on port 9000
+      (connecting to localhost:9000 does not work as SonarQube runs inside a Docker container,
+      thus localhost is routed to that container, rather than the docker host).
+  The pipeline also does the following, which is not necessarily tied to running inside
+  the same VPC:
+    * SSH credentials and reference Jenkins CredentialsIDs that are discovered based on the name 
+      and the target environment.
 
 
 
