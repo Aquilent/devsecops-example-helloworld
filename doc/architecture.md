@@ -75,4 +75,4 @@ This DevSecOps example uses the following architecture:
 [AWS CloudWatch Logs]: http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html
 [Jenkins docker image]: https://hub.docker.com/_/jenkins/
 [SonarQube docker image]: https://hub.docker.com/_/sonarqube/
-NGINX Hello World docker image]: https://hub.docker.com/r/kitematic/hello-world-nginx/
+[NGINX Hello World docker image]: https://hub.docker.com/r/kitematic/hello-world-nginx/
