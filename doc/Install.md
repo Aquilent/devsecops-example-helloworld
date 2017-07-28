@@ -168,17 +168,31 @@ Once the infrastructure is created Jenkins must be configured
 using the following steps:
 
 1. Get the initial administrator password:
+    a. When using the automated installation, the password wil be available in the stack outputs
+       under Output `JenkinsInitialPassword` the value shows a json formatted value:
+       `{"<instance-id>":"<password>"}`
+    b. When using the manual installation:
       - Login to the Jenkins EC2 instance with the jenkins key 
         `ssh -i dso-shared-jenkins <jenkins-public-ip>`
       - Get the key from `/var/jenkins_home/secrets/initialAdminPassword`
 
 2. Browse to Jenkins at `http://<jenkins-public-ip>` and use the initial password to login
    
-3. Choose to install the default plugins
+3. Choose to install the suggested plugins
+
+4. Configure a new admin user, i.e. do not continue with the initial admin, such that the 
+   exposed initial password is no longer valid.
+
+5. (Optional) Setup matrix-based security under 
+   `Manage Jenkins > Configure Global Security > Access Control > Authorization`:
+     - Select `Matric-based security`
+     - Add your newly create admin user and assign all privileges 
+       (or you will no longer be able to manage Jenkins)
+   By default Jenkins Authozization is setup with `Logged-in users can do anything`.
    
-4. Next install the SSH and SSH Agent plugins under `Manage Jenkins > Manage Plugins`
+6. Next install the SSH and SSH Agent plugins under `Manage Jenkins > Manage Plugins`
    
-5. Create the following credentials under `Credentials > global`
+7. Create the following credentials under `Credentials > global`
       - (Optional, if repo is private) A valid Git credential (ID: `*any*`)
       - An SSH Username with private key for the hello-world dev app instance 
         (ID: `dso-dev-helloworld`, Username: `ec2-user`) using the private key from 
@@ -192,7 +206,7 @@ using the following steps:
 
     f. Add users as appropriate under `Manage Jenkins > Manage Users`
 
-6. Setup the multi-pipeline job for the Hello World Application 
+8. Setup the multi-pipeline job for the Hello World Application 
  
     a. Create the job using `New Item` with item name `hello-world-app` and 
        the `Multibranch pipeline` option

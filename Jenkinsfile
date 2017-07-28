@@ -95,10 +95,12 @@ def setEnvironment() {
         }
         // echo "limit length"
         branchName = branchName.take(env.MAX_ENVIRONMENTNAME_LENGTH as Integer)
+        env.FEATURE_BRANCH = branchName
         environment += "-" + branchName
     }
     echo "Using environment: ${environment}"
     env.ENVIRONMENT = environment
+    
 }
 
 def showEnvironmentVariables() {
@@ -172,9 +174,14 @@ def getContext(environment) {
 def runSecurityTest() {
     def sonarReportDir = "target/sonar"
     def jenkinsIP = findJenkinsIp()
+    def version = ((env.BRANCH_NAME == "master") ? "" : "${env.ENVIRONMENT}-")  + env:BUILD_ID
     dir("webapp") {
         withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
-            sh "mvn sonar:sonar -Dsonar.host.url=http://${jenkinsIP}:9000"
+            sh "mvn sonar:sonar " + 
+                "-Dsonar.host.url=http://${jenkinsIP}:9000 " + 
+                "-Dsonar.projectName=hello-world}" +
+                "-Dsonar.projectVersion=${version}"
+
         }
         sh "ls -al ${sonarReportDir}"
         //archiveArtifacts "**/${sonarReportDir}/*.txt"
