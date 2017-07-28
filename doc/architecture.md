@@ -6,14 +6,14 @@ This DevSecOps example uses the following architecture:
 
 
 - Provisioning S3 Bucket - Hold cloud formation template, stack policy and any files 
-  needed to complete the provisioning using [cfn-init]()
+  needed to complete the provisioning using [cfn-init]
 
 - VPC - Virtual networking resources consisting of
     * Individual subnets (environments, Jenkins)
     * Each individual subnet has its own NACL, so it could be modified later
     * Each individual subnet has its own SecurityGroup, so it could be modified later
       These groups must be assigned to the instances in the respective subnets
-    * There is one overall Security Group that defines sources ([CIDR]() blocks) of 
+    * There is one overall Security Group that defines sources ([CIDR] blocks) of 
       priviledged access.
       These groups must be assigned to instances in the various subnets that need
       priviledged acess (specifically ssh)
@@ -31,20 +31,26 @@ This DevSecOps example uses the following architecture:
     * Individual server type roles - Roles per type and environment to combine priiledges as
       appropriate.
 
-- CloudWatch Logs
+- CloudWatch Logs - EC2 instances are stup with the [AWS Logs Agent]. This agent pushes 
+  configured files to [AWS CloudWatch Logs] at a regular interval to reduce the need to access
+  the server using SSH
 
-- ECR Registry
+
+- ECR Registry - IMplement a Docker Registry used to push and pull the Hello World app
+  docker image to and from.
 
 - EC2 Instances 
-    * Every instance runs Docker
-    * Jenkins runs [Jenkins](https://hub.docker.com/_/jenkins/) docker image, started from a service
-    * Jenkins runs [SonarQube](https://hub.docker.com/_/sonarqube/) docker image, started form aservice
+    * Every instance runs Docker; Applications run as a docker image
+    * Jenkins runs [Jenkins docker image];
+      Started from a service such that it is restarted as the EC2 instance is restarted
+    * Jenkins runs [SonarQube docker image];
+      Started from a service such that it is restarted as the EC2 instance is restarted
     * WebServer instance run:
         - Initially, before the pipeline has run successfully at least one
-          [Kitematic NGINX Hello World[(https://hub.docker.com/r/kitematic/hello-world-nginx/)
-        - Subsequently, when pipeline has run [SpringBoot app image](../Dockerfile)
+          [NGINX Hello World docker image]
+        - Subsequently, when pipeline has run [SpringBoot Hello World app image](../Dockerfile)
 
-- [Jenkins pipeline](../Jenkinsfile)
+- [Jenkins pipeline](../Jenkinsfile) - 
   The Jenkins pipeline uses the fact that it runs inside the same environment
   using the assigned IAM Role to. This may not work in other setups where Jenkins is 
   hosted outside the environment.
@@ -65,3 +71,8 @@ This DevSecOps example uses the following architecture:
 
 [cfn-init]: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
 [CIDR]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+[AWS Logs Agent]: http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/QuickStartEC2Instance.html
+[AWS CloudWatch Logs]: http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html
+[Jenkins docker image]: https://hub.docker.com/_/jenkins/
+[SonarQube docker image]: https://hub.docker.com/_/sonarqube/
+NGINX Hello World docker image]: https://hub.docker.com/r/kitematic/hello-world-nginx/

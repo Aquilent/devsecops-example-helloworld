@@ -116,11 +116,12 @@ process:
 5. Integrate a notification mechanism with the pipeline, e.g. [Slack](./doc/slack-integration.md)
 6. If an Restful API component is added, use [Newman] to run API tests using [Postman] 
    test collections via [Newman Docker image].
+7. Run SonarQube on it's own EC2 instance.
+8. Use container orchestration (e.g. Docker swarm, Kubernetes), or a container service (AWS ECS).
 
 
 ## How to Install
-[Installation instructions](./doc/Install.md) can be found [here]((./doc/Install.md)).
-
+[Installation instructions](./doc/install.md) can be found [here](./doc/install.md).
 
 
 [Jenkins multi-branch pipelines]: https://jenkins.io/blog/2015/12/03/pipeline-as-code-with-multibranch-workflows-in-jenkins/
