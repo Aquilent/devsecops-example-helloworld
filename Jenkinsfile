@@ -177,7 +177,7 @@ def runSecurityTest() {
     def version = ((env.BRANCH_NAME == "master") ? "" : "${env.ENVIRONMENT}-")  + env.BUILD_ID
     dir("webapp") {
         withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
-            sh "mvn sonar:sonar " + 
+            sh "mvn -e sonar:sonar " + 
                 "-Dsonar.host.url=http://${jenkinsIP}:9000 " + 
                 "-Dsonar.projectName=hello-world}" +
                 "-Dsonar.projectVersion=${version}"
