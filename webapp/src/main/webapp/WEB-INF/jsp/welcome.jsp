@@ -36,7 +36,7 @@
 
 	<div class="container">
 		<div class="starter-template">
-			<h1>${message}</h1>
+			<h1>${message} - Demo</h1>
 		</div>
 	</div>
 
