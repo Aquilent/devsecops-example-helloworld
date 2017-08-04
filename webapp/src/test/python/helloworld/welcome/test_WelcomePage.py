@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 class test_WelcomePage(HelloWorldTestBase):
 
     def testWelcomeMessage(self):
-        self.assertTextPresent(By.CSS_SELECTOR, "h1", "Hello World");
+        self.assertTextPresent(By.CSS_SELECTOR, "h1", "Hello WorldX");
 
 if __name__ == "__main__":
     HelloWorldTestBase.runTestCase(test_WelcomePage)
