@@ -27,8 +27,8 @@ This DevSecOps example uses the following architecture:
     * Logging Policy (CloudWatch Logs access) - Access to CloudWatch Logs to allow pushing of 
       log files
     * Image Push/Pull Policies (ECR Registry access) - Access to an ECR Registry to push or pull
-      the hellow world application docker image
-    * Individual server type roles - Roles per type and environment to combine priiledges as
+      the hello world application docker image
+    * Individual server type roles - Roles per type and environment to combine priviledges as
       appropriate.
 
 - CloudWatch Logs - EC2 instances are stup with the [AWS Logs Agent]. This agent pushes 

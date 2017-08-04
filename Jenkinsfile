@@ -174,7 +174,7 @@ def getContext(environment) {
 def runSecurityTest() {
     def sonarReportDir = "target/sonar"
     def jenkinsIP = findJenkinsIp()
-    def version = ((env.BRANCH_NAME == "master") ? "" : "${env.ENVIRONMENT}-")  + env:BUILD_ID
+    def version = ((env.BRANCH_NAME == "master") ? "" : "${env.ENVIRONMENT}-")  + env.BUILD_ID
     dir("webapp") {
         withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
             sh "mvn sonar:sonar " + 
