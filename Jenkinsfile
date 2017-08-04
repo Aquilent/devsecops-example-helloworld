@@ -175,17 +175,17 @@ def runSecurityTest() {
     def sonarReportDir = "target/sonar"
     def jenkinsIP = findJenkinsIp()
     def version = ((env.BRANCH_NAME == "master") ? "" : "${env.ENVIRONMENT}-")  + env.BUILD_ID
-    dir("webapp") {
-        withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
-            sh "mvn -e sonar:sonar " + 
-                "-Dsonar.host.url=http://${jenkinsIP}:9000 " + 
-                "-Dsonar.projectName=hello-world}" +
-                "-Dsonar.projectVersion=${version}"
+    // dir("webapp") {
+    //     withDockerContainer("maven:3.5.0-jdk-8-alpine")  {
+    //         sh "mvn -e sonar:sonar " + 
+    //             "-Dsonar.host.url=http://${jenkinsIP}:9000 " + 
+    //             "-Dsonar.projectName=hello-world}" +
+    //             "-Dsonar.projectVersion=${version}"
 
-        }
-        sh "ls -al ${sonarReportDir}"
-        //archiveArtifacts "**/${sonarReportDir}/*.txt"
-     }
+    //     }
+    //     sh "ls -al ${sonarReportDir}"
+    //     //archiveArtifacts "**/${sonarReportDir}/*.txt"
+    //  }
 }
 
 def runBrowserTest(environment) {
